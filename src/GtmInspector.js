@@ -640,12 +640,20 @@ function parseGtmTag_(tag, idx, containerId, entities) {
   if (!tagName) {
     if (tag.vtp_name) {
       tagName = tag.vtp_name;
+    } else if (tag.vtp_tagId) {
+      // For Floodlight and GA4 tags
+      tagName = tag.vtp_tagId;
+    } else if (tag.vtp_activityTag && tag.vtp_groupTag) {
+      // For Floodlight: groupTag/activityTag
+      tagName = tag.vtp_groupTag + '/' + tag.vtp_activityTag;
     } else if (tag.vtp_trackingId) {
       tagName = tag.vtp_trackingId;
     } else if (tag.vtp_measurementId) {
       tagName = tag.vtp_measurementId;
     } else if (tag.vtp_conversionId) {
-      tagName = tag.vtp_conversionId;
+      tagName = 'Conversion ' + tag.vtp_conversionId;
+    } else if (tag.vtp_conversionLabel) {
+      tagName = tag.vtp_conversionLabel;
     }
   }
   
@@ -768,11 +776,11 @@ function parseGtmTriggers_(predicates, rules, containerId, entities) {
   const triggers = [];
   
   rules.forEach((rule, idx) => {
-    // Extract trigger name - GTM rules may not have names in published containers
-    let triggerName = rule.name || '';
+    // Extract trigger name - GTM published containers don't include trigger names
+    let triggerName = '';
     
     // GTM stores names in metadata array: ["map", "name", "Trigger Name"]
-    if (!triggerName && rule.metadata && Array.isArray(rule.metadata)) {
+    if (rule.metadata && Array.isArray(rule.metadata)) {
       for (let i = 0; i < rule.metadata.length; i++) {
         if (rule.metadata[i] === 'name' && i + 1 < rule.metadata.length) {
           triggerName = rule.metadata[i + 1];
@@ -781,31 +789,32 @@ function parseGtmTriggers_(predicates, rules, containerId, entities) {
       }
     }
     
-    // Try to get name from entities mapping
-    // The entities array has entries for tags, triggers, and variables sequentially
-    // Need to offset by number of tags to get trigger names
-    if (!triggerName && entities) {
-      // Entities structure might have trigger names indexed differently
-      // This is a heuristic approach since GTM's internal structure can vary
-      const potentialKeys = Object.keys(entities).filter(k => !isNaN(k)).map(Number).sort((a,b) => a-b);
-      // Look for a key that might correspond to this trigger
-      // Triggers usually come after tags in the entities mapping
-      for (const key of potentialKeys) {
-        const entityData = entities[key];
-        if (Array.isArray(entityData) && entityData.length > 0 && String(entityData[0]).toLowerCase().includes('trigger')) {
-          if (!triggerName) {
-            triggerName = entityData[0];
-            break;
+    // Create descriptive name from trigger structure since GTM doesn't publish names
+    if (!triggerName) {
+      const conditions = [];
+      
+      // Get condition predicates
+      if (rule.add && Array.isArray(rule.add)) {
+        for (let i = 0; i < Math.min(2, rule.add.length); i++) {
+          const predIdx = rule.add[i];
+          if (predicates[predIdx]) {
+            const pred = predicates[predIdx];
+            // pred format: ["operator", arg1, arg2, ...]
+            if (Array.isArray(pred) && pred.length >= 3) {
+              const op = pred[0];
+              const val = pred[2];
+              if (val && String(val).length > 0 && String(val).length < 50) {
+                conditions.push(String(val));
+              }
+            }
           }
         }
       }
-    }
-    
-    // If no name, try to create a descriptive one from the rule type
-    if (!triggerName && rule.add && rule.add.length > 0) {
-      const firstPred = predicates[rule.add[0]];
-      if (firstPred && firstPred[2]) {
-        triggerName = 'Trigger: ' + String(firstPred[2]).substring(0, 30);
+      
+      if (conditions.length > 0) {
+        triggerName = 'Trigger #' + idx + ': ' + conditions.join(' | ');
+      } else {
+        triggerName = 'Trigger #' + idx;
       }
     }
     
@@ -909,39 +918,52 @@ function parseGtmVariable_(macro, idx, containerId, entities) {
     }
   }
   
-  // Try to get name from entities mapping  
-  if (!varName && entities) {
-    // Variables/macros might have their own index range in entities
-    // Try direct index lookup first
-    const potentialKeys = Object.keys(entities).filter(k => !isNaN(k)).map(Number).sort((a,b) => a-b);
-    for (const key of potentialKeys) {
-      const entityData = entities[key];
-      if (Array.isArray(entityData) && entityData.length > 0) {
-        // Check if this might be our variable by looking at the macro function
-        if (entityData[0] && typeof entityData[0] === 'string') {
-          // Simple heuristic: if index is roughly in macro range, use it
-          if (!varName && key >= idx * 0.5 && key <= idx * 2) {
-            varName = entityData[0];
-            break;
-          }
-        }
-      }
-    }
-  }
-  
-  // If no direct name, try vtp_name (common for Data Layer Variables)
+  // Try vtp_name (common for Data Layer Variables)
   if (!varName && macro.vtp_name) {
     varName = macro.vtp_name;
   }
   
-  // If still no name and it's a constant, use the value
-  if (!varName && macro.function === '__k' && macro.vtp_value) {
-    varName = macro.vtp_value;
-  }
-  
-  // For URL variables, extract component type
-  if (!varName && macro.function === '__u' && macro.vtp_component) {
-    varName = macro.vtp_component;
+  // Create descriptive names for built-in variables based on their configuration
+  if (!varName) {
+    const func = macro.function || '';
+    
+    if (func === '__k' && macro.vtp_name) {
+      // Cookie variable
+      varName = 'Cookie: ' + macro.vtp_name;
+    } else if (func === '__k' && macro.vtp_value) {
+      // Constant
+      const val = String(macro.vtp_value);
+      varName = 'Constant: ' + (val.length > 30 ? val.substring(0, 30) + '...' : val);
+    } else if (func === '__u' && macro.vtp_component) {
+      // URL variable
+      varName = 'URL - ' + macro.vtp_component;
+      if (macro.vtp_queryKey) {
+        varName += ': ' + macro.vtp_queryKey;
+      }
+    } else if (func === '__v' && macro.vtp_name) {
+      // Data Layer Variable (already handled above, but just in case)
+      varName = 'DL: ' + macro.vtp_name;
+    } else if (func === '__jsm') {
+      // Custom JavaScript
+      varName = 'Custom JS #' + idx;
+    } else if (func === '__c' && macro.vtp_value) {
+      // Container constant
+      varName = 'Container: ' + macro.vtp_value;
+    } else if (func === '__smm' || func === '__remm') {
+      // Regex/Lookup Table
+      varName = 'Lookup Table #' + idx;
+    } else if (func === '__e') {
+      varName = 'Environment Name';
+    } else if (func === '__r') {
+      varName = 'Random Number';
+    } else if (func === '__f') {
+      varName = 'Referrer URL';
+    } else if (func === '__aev') {
+      varName = 'Auto-Event Variable';
+    } else {
+      // Generic fallback
+      varName = 'Variable #' + idx + ' (' + func + ')';
+    }
   }
   
   const variable = {
