@@ -600,13 +600,23 @@ function parseContainerData_(data, containerId) {
  * @returns {Object} Normalized tag object
  */
 function parseGtmTag_(tag, idx, containerId, data) {
+  // Handle trigger references - can be array, single value, or undefined
+  let triggers = '';
+  if (tag.tag_id !== undefined && tag.tag_id !== null) {
+    if (Array.isArray(tag.tag_id)) {
+      triggers = tag.tag_id.join(', ');
+    } else {
+      triggers = String(tag.tag_id);
+    }
+  }
+  
   const parsed = {
     containerId: containerId,
     id: tag.function || ('tag_' + idx),
     name: tag.name || '',
     type: identifyTagType_(tag),
     vendor: identifyTagVendor_(tag),
-    triggers: (tag.tag_id || []).join(', '),
+    triggers: triggers,
     raw: JSON.stringify(tag)
   };
   
