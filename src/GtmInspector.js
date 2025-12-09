@@ -185,6 +185,9 @@ function inspectGtmContainer() {
     const rawJs = fetchGtmJs_(containerId);
     Logger.log(`Fetched ${rawJs.length} characters of GTM JS`);
     
+    // Create a debug sheet with raw JS sample
+    createDebugSheet_(rawJs, containerId);
+    
     // Parse the container model
     const model = extractContainerModelFromRawJs_(rawJs, containerId);
     Logger.log(`Parsed: ${model.tags.length} tags, ${model.triggers.length} triggers, ${model.variables.length} variables`);
@@ -291,6 +294,27 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
     Logger.log(`JS length: ${rawJs.length} characters`);
     
     // Modern GTM containers use different patterns. Try multiple strategies:
+    
+    // Strategy 0: Direct google_tag_manager object (most common modern format)
+    // Format: if(window.google_tag_manager)google_tag_manager["GTM-XXX"]={...}
+    const directGtmPattern = new RegExp('google_tag_manager\\["' + containerId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"\\]\\s*=\\s*\\{');
+    const directMatch = rawJs.match(directGtmPattern);
+    if (directMatch) {
+      Logger.log('Found direct google_tag_manager["' + containerId + '"] assignment');
+      try {
+        const startIdx = rawJs.indexOf(directMatch[0]) + directMatch[0].length - 1;
+        const extracted = extractCompleteObject_(rawJs, startIdx);
+        if (extracted) {
+          Logger.log(`Extracted object: ${extracted.length} chars`);
+          const data = JSON.parse(extracted);
+          Logger.log(`Parsed successfully, keys: ${Object.keys(data).join(', ')}`);
+          return parseContainerData_(data, containerId);
+        }
+      } catch (e) {
+        Logger.log('Direct GTM pattern failed: ' + e.message);
+        Logger.log('Stack: ' + e.stack);
+      }
+    }
     
     // Strategy 1: Look for .push() calls with container data
     // Modern format: gtmDomain.push({"gtm.start":...}) or similar
@@ -1016,4 +1040,56 @@ function showGtmReadme() {
   }
   
   ss.setActiveSheet(sheet);
+}
+
+/**
+ * Creates a debug sheet with raw JS samples for troubleshooting
+ * @param {string} rawJs - Raw GTM JavaScript
+ * @param {string} containerId - Container ID
+ */
+function createDebugSheet_(rawJs, containerId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('GTM_DEBUG');
+  
+  if (!sheet) {
+    sheet = ss.insertSheet('GTM_DEBUG');
+  }
+  
+  sheet.clearContents();
+  
+  // Write debugging information
+  const debugInfo = [
+    ['GTM Container Debug Information'],
+    ['Container ID', containerId],
+    ['JS Length', rawJs.length + ' characters'],
+    ['Date', new Date().toString()],
+    [''],
+    ['First 2000 characters:'],
+    [rawJs.substring(0, 2000)],
+    [''],
+    ['Last 1000 characters:'],
+    [rawJs.substring(rawJs.length - 1000)],
+    [''],
+    ['Search for key patterns:'],
+    ['Contains "tags":', rawJs.includes('"tags"') ? 'YES' : 'NO'],
+    ['Contains "macros":', rawJs.includes('"macros"') ? 'YES' : 'NO'],
+    ['Contains "predicates":', rawJs.includes('"predicates"') ? 'YES' : 'NO'],
+    ['Contains "rules":', rawJs.includes('"rules"') ? 'YES' : 'NO'],
+    ['Contains "resource":', rawJs.includes('"resource"') ? 'YES' : 'NO'],
+    ['Contains "google_tag_manager":', rawJs.includes('google_tag_manager') ? 'YES' : 'NO'],
+    ['Contains ".push(":', rawJs.includes('.push(') ? 'YES' : 'NO'],
+    [''],
+    ['Character counts:'],
+    ['Opening braces {', (rawJs.match(/\{/g) || []).length],
+    ['Closing braces }', (rawJs.match(/\}/g) || []).length],
+    ['Opening brackets [', (rawJs.match(/\[/g) || []).length],
+    ['Closing brackets ]', (rawJs.match(/\]/g) || []).length]
+  ];
+  
+  sheet.getRange(1, 1, debugInfo.length, 2).setValues(debugInfo);
+  sheet.setColumnWidth(1, 250);
+  sheet.setColumnWidth(2, 600);
+  sheet.getRange(1, 1).setFontWeight('bold').setFontSize(12);
+  
+  Logger.log('Created GTM_DEBUG sheet with container analysis');
 }
