@@ -28,8 +28,17 @@ function onOpen() {
       .addItem('Validate Configuration', 'validateConfiguration')
       .addItem('View Crawl Statistics', 'showCrawlStatistics'))
     .addToUi();
+  
+  // Create separate GTM Inspector menu
+  ui.createMenu('GTM Inspector')
+    .addItem('Setup GTM Sheets', 'setupGtmInspectorSheets')
+    .addItem('Inspect Container', 'inspectGtmContainer')
+    .addSeparator()
+    .addItem('Clear Output Sheets', 'clearGtmOutputSheets')
+    .addItem('Show README', 'showGtmReadme')
+    .addToUi();
     
-  Logger.log('Custom menu "Site Data Layer Tools" created successfully');
+  Logger.log('Custom menus created successfully');
 }
 
 /**

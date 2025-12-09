@@ -1,0 +1,873 @@
+/**
+ * GtmInspector.js
+ * Google Tag Manager Container Inspector
+ * Fetches and parses public GTM container JS to analyze tags, triggers, variables, and vendors.
+ * 
+ * @author Brian Kaufman - Horizon Media
+ * @version 1.0.0
+ */
+
+// ===== CONFIG & INIT =====
+
+/**
+ * Ensures GTM Inspector sheets exist with proper structure
+ * Called automatically when first using GTM Inspector features
+ */
+function setupGtmInspectorSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Create CONFIG sheet if it doesn't exist
+  let configSheet = ss.getSheetByName('GTM_CONFIG');
+  if (!configSheet) {
+    configSheet = ss.insertSheet('GTM_CONFIG');
+    configSheet.getRange('A1').setValue('GTM_CONTAINER_ID');
+    configSheet.getRange('A1').setFontWeight('bold');
+    configSheet.getRange('A2').setNote(
+      'Enter a GTM container ID like GTM-XXXXXXX. This script will fetch ' +
+      'https://www.googletagmanager.com/gtm.js?id=YOUR_ID and inspect the live published container.'
+    );
+    
+    // Add data validation
+    const rule = SpreadsheetApp.newDataValidation()
+      .requireTextContains('GTM-')
+      .setAllowInvalid(false)
+      .setHelpText('Must be a valid GTM container ID starting with GTM-')
+      .build();
+    configSheet.getRange('A2').setDataValidation(rule);
+    
+    configSheet.setColumnWidth(1, 200);
+    configSheet.setColumnWidth(2, 400);
+  }
+  
+  // Create README sheet if it doesn't exist
+  let readmeSheet = ss.getSheetByName('GTM_README');
+  if (!readmeSheet) {
+    readmeSheet = ss.insertSheet('GTM_README');
+    populateGtmReadmeSheet_(readmeSheet);
+  }
+  
+  Logger.log('GTM Inspector sheets initialized');
+}
+
+/**
+ * Populates the README sheet with documentation
+ * @param {Sheet} sheet - The README sheet to populate
+ */
+function populateGtmReadmeSheet_(sheet) {
+  const content = [
+    ['GTM Container Inspector – README'],
+    [''],
+    ['═══════════════════════════════════════════════════════════════'],
+    ['PURPOSE'],
+    ['═══════════════════════════════════════════════════════════════'],
+    [''],
+    ['This tool inspects a public GTM container using only the container ID.'],
+    ['It fetches the live published container JavaScript and extracts:'],
+    ['  • Tags (with types, vendors, and trigger associations)'],
+    ['  • Triggers (with types and conditions)'],
+    ['  • Variables (with types and configurations)'],
+    ['  • Vendors (detected via pattern matching)'],
+    [''],
+    ['═══════════════════════════════════════════════════════════════'],
+    ['HOW IT WORKS'],
+    ['═══════════════════════════════════════════════════════════════'],
+    [''],
+    ['The inspectGtmContainer() function:'],
+    ['  1. Reads the container ID from GTM_CONFIG sheet'],
+    ['  2. Fetches https://www.googletagmanager.com/gtm.js?id=YOUR_ID'],
+    ['  3. Parses the compiled JavaScript (best effort)'],
+    ['  4. Extracts structured data about tags, triggers, and variables'],
+    ['  5. Scans for vendor patterns (GA4, UA, Google Ads, Floodlight, Meta, etc.)'],
+    ['  6. Populates the GTM_Tags, GTM_Triggers, GTM_Variables, and GTM_Vendors sheets'],
+    [''],
+    ['IMPORTANT: GTM\'s compiled JS is obfuscated and may change at any time.'],
+    ['Parsing is "best effort" and may not capture everything perfectly.'],
+    [''],
+    ['═══════════════════════════════════════════════════════════════'],
+    ['SETUP'],
+    ['═══════════════════════════════════════════════════════════════'],
+    [''],
+    ['Step 1: Enter your GTM container ID in GTM_CONFIG!A2'],
+    ['        Example: GTM-XXXXXXX'],
+    [''],
+    ['Step 2: Use the menu: GTM Inspector → Inspect Container'],
+    [''],
+    ['Step 3: Review the results in GTM_Tags, GTM_Triggers, GTM_Variables, GTM_Vendors'],
+    [''],
+    ['═══════════════════════════════════════════════════════════════'],
+    ['TABS OVERVIEW'],
+    ['═══════════════════════════════════════════════════════════════'],
+    [''],
+    ['GTM_CONFIG    - Container ID configuration'],
+    ['GTM_README    - This documentation'],
+    ['GTM_Tags      - All tags with types, vendors, and triggers'],
+    ['GTM_Triggers  - All triggers with types and conditions'],
+    ['GTM_Variables - All variables with types and details'],
+    ['GTM_Vendors   - Detected vendor IDs (GA4, Ads, Floodlight, Meta, TikTok, etc.)'],
+    [''],
+    ['═══════════════════════════════════════════════════════════════'],
+    ['LIMITATIONS'],
+    ['═══════════════════════════════════════════════════════════════'],
+    [''],
+    ['• Cannot access GTM UI, workspace versions, or unpublished changes'],
+    ['• Only inspects the LIVE PUBLISHED container'],
+    ['• Parsing is best-effort and may miss advanced GTM features'],
+    ['• Obfuscation changes may break parsing (will fail gracefully)'],
+    ['• Cannot determine pause/active status of tags'],
+    [''],
+    ['═══════════════════════════════════════════════════════════════'],
+    ['TROUBLESHOOTING'],
+    ['═══════════════════════════════════════════════════════════════'],
+    [''],
+    ['HTTP Errors:'],
+    ['  • Verify the container ID is correct (check GTM_CONFIG)'],
+    ['  • Ensure the container is published (not just in preview)'],
+    ['  • Check your network connection'],
+    [''],
+    ['Blank Sheets:'],
+    ['  • Container may be empty or newly created'],
+    ['  • Parsing may have failed (check Execution log in Apps Script)'],
+    ['  • Try the "Clear Output Sheets" menu item and re-run'],
+    [''],
+    ['Missing Data:'],
+    ['  • Check the "raw" columns for unparsed JSON data'],
+    ['  • Some advanced tag configurations may not parse correctly'],
+    ['  • Vendor detection is regex-based and may miss custom implementations'],
+    [''],
+    ['═══════════════════════════════════════════════════════════════'],
+    [''],
+    ['For support, contact: Brian Kaufman - Horizon Media Platform Solutions'],
+    ['Last updated: December 8, 2025']
+  ];
+  
+  sheet.getRange(1, 1, content.length, 1).setValues(content);
+  sheet.setColumnWidth(1, 800);
+  sheet.getRange(1, 1).setFontSize(14).setFontWeight('bold');
+  
+  // Bold section headers
+  const headerRows = [4, 14, 29, 38, 49, 58];
+  headerRows.forEach(row => {
+    sheet.getRange(row, 1).setFontWeight('bold').setBackground('#E8F0FE');
+  });
+}
+
+// ===== FETCH & PARSE =====
+
+/**
+ * Main entry point for GTM inspection
+ * Reads config, fetches GTM JS, parses it, and populates sheets
+ */
+function inspectGtmContainer() {
+  const ui = SpreadsheetApp.getUi();
+  
+  try {
+    // Ensure sheets exist
+    setupGtmInspectorSheets();
+    
+    // Read container ID from config
+    const containerId = getGtmContainerId_();
+    
+    if (!containerId) {
+      ui.alert('Configuration Required', 
+        'Please enter a GTM container ID in the GTM_CONFIG sheet (cell A2).\n\n' +
+        'Example: GTM-XXXXXXX',
+        ui.ButtonSet.OK);
+      return;
+    }
+    
+    ui.alert('Fetching Container', 
+      `Inspecting GTM container: ${containerId}\n\n` +
+      'This may take 30-60 seconds...',
+      ui.ButtonSet.OK);
+    
+    // Fetch the GTM JS
+    Logger.log(`Fetching GTM container: ${containerId}`);
+    const rawJs = fetchGtmJs_(containerId);
+    Logger.log(`Fetched ${rawJs.length} characters of GTM JS`);
+    
+    // Parse the container model
+    const model = extractContainerModelFromRawJs_(rawJs, containerId);
+    Logger.log(`Parsed: ${model.tags.length} tags, ${model.triggers.length} triggers, ${model.variables.length} variables`);
+    
+    // Analyze vendors
+    const vendors = analyzeVendorsFromRawJs_(rawJs, containerId, model.tags);
+    Logger.log(`Detected ${vendors.length} vendor instances`);
+    
+    // Write to sheets
+    writeGtmTable_('GTM_Tags', 
+      ['containerId', 'id', 'name', 'type', 'vendor', 'triggers', 'raw'],
+      model.tags);
+    
+    writeGtmTable_('GTM_Triggers',
+      ['containerId', 'id', 'name', 'type', 'conditionsSummary', 'raw'],
+      model.triggers);
+    
+    writeGtmTable_('GTM_Variables',
+      ['containerId', 'id', 'name', 'type', 'detailsSummary', 'raw'],
+      model.variables);
+    
+    writeGtmTable_('GTM_Vendors',
+      ['containerId', 'vendor', 'type', 'id', 'extra'],
+      vendors);
+    
+    // Success message
+    const message = 
+      `✅ Container Inspection Complete!\n\n` +
+      `Container: ${containerId}\n\n` +
+      `Tags: ${model.tags.length}\n` +
+      `Triggers: ${model.triggers.length}\n` +
+      `Variables: ${model.variables.length}\n` +
+      `Vendor Instances: ${vendors.length}\n\n` +
+      `Check the GTM_Tags, GTM_Triggers, GTM_Variables, and GTM_Vendors sheets.`;
+    
+    ui.alert('Inspection Complete', message, ui.ButtonSet.OK);
+    
+  } catch (error) {
+    Logger.log('ERROR in inspectGtmContainer: ' + error.stack);
+    ui.alert('GTM Inspector Error', 
+      error.message + '\n\nCheck the Execution log in Apps Script for details.',
+      ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * Reads the GTM container ID from config sheet
+ * @returns {string} Container ID or empty string
+ */
+function getGtmContainerId_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('GTM_CONFIG');
+  
+  if (!sheet) return '';
+  
+  const value = sheet.getRange('A2').getValue();
+  return String(value).trim();
+}
+
+/**
+ * Fetches the GTM container JavaScript
+ * @param {string} containerId - GTM container ID
+ * @returns {string} Container JavaScript source
+ */
+function fetchGtmJs_(containerId) {
+  const url = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(containerId);
+  
+  const options = {
+    muteHttpExceptions: true,
+    followRedirects: true
+  };
+  
+  const resp = UrlFetchApp.fetch(url, options);
+  const code = resp.getResponseCode();
+  
+  if (code !== 200) {
+    throw new Error(
+      'Failed to fetch GTM container ' + containerId +
+      ' (HTTP ' + code + '). ' +
+      'Verify the container ID is correct and published.'
+    );
+  }
+  
+  return resp.getContentText();
+}
+
+/**
+ * Extracts container model from raw GTM JavaScript
+ * Best-effort parsing with graceful degradation
+ * 
+ * @param {string} rawJs - GTM JavaScript source
+ * @param {string} containerId - Container ID for reference
+ * @returns {Object} Model with tags, triggers, variables arrays
+ */
+function extractContainerModelFromRawJs_(rawJs, containerId) {
+  const model = {
+    tags: [],
+    triggers: [],
+    variables: []
+  };
+  
+  try {
+    // GTM usually has a resource object that looks like:
+    // ({"resource":{"macros":[...],"tags":[...],"predicates":[...],"rules":[...]},...)
+    
+    // Strategy: find the resource object and extract it
+    const resourceMatch = rawJs.match(/\{"resource":\{[^}]+/);
+    
+    if (!resourceMatch) {
+      Logger.log('WARNING: Could not find resource object in GTM JS');
+      return model;
+    }
+    
+    // Find the complete resource object by counting braces
+    const startIdx = rawJs.indexOf('{"resource"');
+    let braceCount = 0;
+    let endIdx = startIdx;
+    let inString = false;
+    let escapeNext = false;
+    
+    for (let i = startIdx; i < rawJs.length; i++) {
+      const char = rawJs[i];
+      
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        escapeNext = true;
+        continue;
+      }
+      
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+      
+      if (inString) continue;
+      
+      if (char === '{') braceCount++;
+      if (char === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          endIdx = i + 1;
+          break;
+        }
+      }
+    }
+    
+    if (endIdx <= startIdx) {
+      Logger.log('WARNING: Could not extract complete resource object');
+      return model;
+    }
+    
+    let resourceJson = rawJs.substring(startIdx, endIdx);
+    
+    // Try to parse
+    let resource;
+    try {
+      resource = JSON.parse(resourceJson);
+    } catch (e) {
+      Logger.log('WARNING: Could not parse resource JSON directly: ' + e.message);
+      return model;
+    }
+    
+    if (!resource || !resource.resource) {
+      Logger.log('WARNING: Parsed object does not have expected structure');
+      return model;
+    }
+    
+    const data = resource.resource;
+    
+    // Extract tags
+    if (data.tags && Array.isArray(data.tags)) {
+      model.tags = data.tags.map((tag, idx) => parseGtmTag_(tag, idx, containerId, data));
+    }
+    
+    // Extract triggers (predicates + rules)
+    if (data.predicates && data.rules) {
+      model.triggers = parseGtmTriggers_(data.predicates, data.rules, containerId);
+    }
+    
+    // Extract variables (macros in GTM terminology)
+    if (data.macros && Array.isArray(data.macros)) {
+      model.variables = data.macros.map((macro, idx) => parseGtmVariable_(macro, idx, containerId));
+    }
+    
+    Logger.log(`Successfully parsed GTM resource: ${model.tags.length} tags, ${model.triggers.length} triggers, ${model.variables.length} variables`);
+    
+  } catch (error) {
+    Logger.log('ERROR parsing GTM JS: ' + error.message);
+    Logger.log(error.stack);
+  }
+  
+  return model;
+}
+
+/**
+ * Parses a single GTM tag object
+ * @param {Object} tag - Raw tag object
+ * @param {number} idx - Tag index
+ * @param {string} containerId - Container ID
+ * @param {Object} data - Full resource data for lookups
+ * @returns {Object} Normalized tag object
+ */
+function parseGtmTag_(tag, idx, containerId, data) {
+  const parsed = {
+    containerId: containerId,
+    id: tag.function || ('tag_' + idx),
+    name: tag.name || '',
+    type: identifyTagType_(tag),
+    vendor: identifyTagVendor_(tag),
+    triggers: (tag.tag_id || []).join(', '),
+    raw: JSON.stringify(tag)
+  };
+  
+  return parsed;
+}
+
+/**
+ * Identifies tag type from tag object
+ * @param {Object} tag - Tag object
+ * @returns {string} Tag type description
+ */
+function identifyTagType_(tag) {
+  const func = tag.function || '';
+  const vtp = tag.vtp_trackingId || tag.vtp_measurementId || '';
+  
+  // Google Analytics 4
+  if (func.includes('gaawe') || func.includes('gaawc')) {
+    return 'GA4 Event';
+  }
+  if (func === '__googtag' || vtp.startsWith('G-')) {
+    return 'GA4 Config';
+  }
+  
+  // Universal Analytics
+  if (func === '__ua') {
+    return 'Universal Analytics';
+  }
+  
+  // Google Ads
+  if (func === '__gclidw') {
+    return 'Google Ads Conversion Linker';
+  }
+  if (func.includes('awct')) {
+    return 'Google Ads Conversion Tracking';
+  }
+  if (func.includes('sp')) {
+    return 'Google Ads Remarketing';
+  }
+  
+  // Floodlight
+  if (func.includes('flc') || func.includes('fls')) {
+    return 'Floodlight Counter/Sales';
+  }
+  
+  // Custom HTML
+  if (func === '__html') {
+    return 'Custom HTML';
+  }
+  
+  // Custom Image
+  if (func === '__img') {
+    return 'Custom Image';
+  }
+  
+  return func || 'Unknown';
+}
+
+/**
+ * Identifies vendor from tag configuration
+ * @param {Object} tag - Tag object
+ * @returns {string} Vendor name
+ */
+function identifyTagVendor_(tag) {
+  const func = tag.function || '';
+  const html = tag.vtp_html || '';
+  
+  if (func.includes('gaa') || func.includes('googtag') || func === '__ua') {
+    return 'Google Analytics';
+  }
+  
+  if (func.includes('awct') || func.includes('gclidw') || func.includes('sp')) {
+    return 'Google Ads';
+  }
+  
+  if (func.includes('flc') || func.includes('fls')) {
+    return 'Floodlight';
+  }
+  
+  if (html.includes('fbq(')) {
+    return 'Meta (Facebook)';
+  }
+  
+  if (html.includes('ttq.')) {
+    return 'TikTok';
+  }
+  
+  if (html.includes('linkedin')) {
+    return 'LinkedIn';
+  }
+  
+  if (html.includes('pintrk')) {
+    return 'Pinterest';
+  }
+  
+  if (func === '__html' || func === '__img') {
+    return 'Custom';
+  }
+  
+  return 'Other/Unknown';
+}
+
+/**
+ * Parses GTM triggers from predicates and rules
+ * @param {Array} predicates - Predicate definitions
+ * @param {Array} rules - Rule definitions
+ * @param {string} containerId - Container ID
+ * @returns {Array} Normalized trigger objects
+ */
+function parseGtmTriggers_(predicates, rules, containerId) {
+  const triggers = [];
+  
+  rules.forEach((rule, idx) => {
+    const trigger = {
+      containerId: containerId,
+      id: 'trigger_' + idx,
+      name: rule.name || '',
+      type: identifyTriggerType_(rule, predicates),
+      conditionsSummary: summarizeTriggerConditions_(rule, predicates),
+      raw: JSON.stringify(rule)
+    };
+    
+    triggers.push(trigger);
+  });
+  
+  return triggers;
+}
+
+/**
+ * Identifies trigger type
+ * @param {Object} rule - Rule object
+ * @param {Array} predicates - Predicates array
+ * @returns {string} Trigger type
+ */
+function identifyTriggerType_(rule, predicates) {
+  // This is simplified - GTM trigger types are complex
+  if (rule.add && rule.add.length > 0) {
+    const firstPredicate = predicates[rule.add[0]];
+    if (firstPredicate) {
+      const type = firstPredicate[0];
+      if (type === 'equals' && firstPredicate[1] && firstPredicate[1].macro === '0') {
+        return 'Page View';
+      }
+      if (type === 'cn' || type === 'contains') {
+        return 'Page View (conditional)';
+      }
+    }
+  }
+  
+  return 'Custom Trigger';
+}
+
+/**
+ * Summarizes trigger conditions
+ * @param {Object} rule - Rule object
+ * @param {Array} predicates - Predicates array
+ * @returns {string} Conditions summary
+ */
+function summarizeTriggerConditions_(rule, predicates) {
+  const conditions = [];
+  
+  if (rule.add) {
+    rule.add.forEach(idx => {
+      if (predicates[idx]) {
+        conditions.push(stringifyPredicate_(predicates[idx]));
+      }
+    });
+  }
+  
+  return conditions.slice(0, 3).join(' AND ') || 'All Pages';
+}
+
+/**
+ * Converts predicate to readable string
+ * @param {Array} predicate - Predicate array
+ * @returns {string} Readable condition
+ */
+function stringifyPredicate_(predicate) {
+  const op = predicate[0];
+  const val = predicate[2];
+  
+  const opMap = {
+    'equals': '==',
+    'cn': 'contains',
+    'sw': 'starts with',
+    'ew': 'ends with',
+    'regex': 'matches'
+  };
+  
+  return `${opMap[op] || op} "${val}"`;
+}
+
+/**
+ * Parses a GTM variable (macro)
+ * @param {Object} macro - Macro object
+ * @param {number} idx - Index
+ * @param {string} containerId - Container ID
+ * @returns {Object} Normalized variable object
+ */
+function parseGtmVariable_(macro, idx, containerId) {
+  const variable = {
+    containerId: containerId,
+    id: macro.function || ('var_' + idx),
+    name: macro.name || '',
+    type: identifyVariableType_(macro),
+    detailsSummary: summarizeVariableDetails_(macro),
+    raw: JSON.stringify(macro)
+  };
+  
+  return variable;
+}
+
+/**
+ * Identifies variable type
+ * @param {Object} macro - Macro object
+ * @returns {string} Variable type
+ */
+function identifyVariableType_(macro) {
+  const func = macro.function || '';
+  
+  if (func === '__v') return 'Data Layer Variable';
+  if (func === '__u') return 'URL';
+  if (func === '__k') return 'Constant';
+  if (func === '__jsm') return 'Custom JavaScript';
+  if (func === '__r') return 'Random Number';
+  if (func === '__e') return 'Environment';
+  if (func === '__c') return 'Container ID';
+  if (func === '__j') return 'JavaScript Variable';
+  if (func === '__smm') return 'Regex Table';
+  
+  return func || 'Unknown';
+}
+
+/**
+ * Summarizes variable configuration
+ * @param {Object} macro - Macro object
+ * @returns {string} Details summary
+ */
+function summarizeVariableDetails_(macro) {
+  if (macro.vtp_name) {
+    return 'dataLayer: ' + macro.vtp_name;
+  }
+  if (macro.vtp_component) {
+    return 'URL component: ' + macro.vtp_component;
+  }
+  if (macro.vtp_value) {
+    return 'Value: ' + String(macro.vtp_value).substring(0, 50);
+  }
+  
+  return '';
+}
+
+// ===== VENDOR DETECTION =====
+
+/**
+ * Analyzes vendors from raw JS using regex patterns
+ * @param {string} rawJs - GTM JavaScript
+ * @param {string} containerId - Container ID
+ * @param {Array} tags - Parsed tags for additional context
+ * @returns {Array} Vendor detection results
+ */
+function analyzeVendorsFromRawJs_(rawJs, containerId, tags) {
+  const vendors = [];
+  const seen = new Set();
+  
+  // GA4 Measurement IDs
+  const ga4Pattern = /G-[A-Z0-9]{7,12}/g;
+  let match;
+  while ((match = ga4Pattern.exec(rawJs)) !== null) {
+    const id = match[0];
+    if (!seen.has(id)) {
+      seen.add(id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'Google Analytics',
+        type: 'GA4 Measurement ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  // UA Property IDs
+  const uaPattern = /UA-\d{4,10}-\d{1,4}/g;
+  while ((match = uaPattern.exec(rawJs)) !== null) {
+    const id = match[0];
+    if (!seen.has(id)) {
+      seen.add(id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'Google Analytics',
+        type: 'UA Property ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  // Google Ads Conversion IDs
+  const awPattern = /AW-\d{6,12}/g;
+  while ((match = awPattern.exec(rawJs)) !== null) {
+    const id = match[0];
+    if (!seen.has(id)) {
+      seen.add(id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'Google Ads',
+        type: 'Conversion ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  // Floodlight
+  const flPattern = /DC-\d{6,12}/g;
+  while ((match = flPattern.exec(rawJs)) !== null) {
+    const id = match[0];
+    if (!seen.has(id)) {
+      seen.add(id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'Floodlight',
+        type: 'Advertiser ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  // Meta Pixel
+  const fbPattern = /fbq\(['"]init['"],\s*['"](\d{15,16})['"]/g;
+  while ((match = fbPattern.exec(rawJs)) !== null) {
+    const id = match[1];
+    if (!seen.has('fb_' + id)) {
+      seen.add('fb_' + id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'Meta (Facebook)',
+        type: 'Pixel ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  // TikTok Pixel
+  const ttPattern = /ttq\.load\(['"]([A-Z0-9]{20,})['"]/g;
+  while ((match = ttPattern.exec(rawJs)) !== null) {
+    const id = match[1];
+    if (!seen.has('tt_' + id)) {
+      seen.add('tt_' + id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'TikTok',
+        type: 'Pixel ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  // LinkedIn Insight Tag
+  const liPattern = /_linkedin_partner_id\s*=\s*['"](\d+)['"]/g;
+  while ((match = liPattern.exec(rawJs)) !== null) {
+    const id = match[1];
+    if (!seen.has('li_' + id)) {
+      seen.add('li_' + id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'LinkedIn',
+        type: 'Partner ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  // Pinterest
+  const pinPattern = /pintrk\(['"]load['"],\s*['"](\d+)['"]/g;
+  while ((match = pinPattern.exec(rawJs)) !== null) {
+    const id = match[1];
+    if (!seen.has('pin_' + id)) {
+      seen.add('pin_' + id);
+      vendors.push({
+        containerId: containerId,
+        vendor: 'Pinterest',
+        type: 'Tag ID',
+        id: id,
+        extra: ''
+      });
+    }
+  }
+  
+  return vendors;
+}
+
+// ===== SHEET OPERATIONS =====
+
+/**
+ * Writes data to a GTM sheet with headers
+ * @param {string} sheetName - Sheet name
+ * @param {Array<string>} headers - Column headers
+ * @param {Array<Object>} rows - Data rows
+ */
+function writeGtmTable_(sheetName, headers, rows) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(sheetName);
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+  }
+  
+  sheet.clearContents();
+  
+  const data = [headers];
+  rows.forEach(rowObj => {
+    data.push(headers.map(h => rowObj[h] != null ? String(rowObj[h]) : ''));
+  });
+  
+  if (data.length > 0) {
+    sheet.getRange(1, 1, data.length, headers.length).setValues(data);
+    
+    // Format header row
+    sheet.getRange(1, 1, 1, headers.length)
+      .setFontWeight('bold')
+      .setBackground('#4285F4')
+      .setFontColor('#FFFFFF');
+    
+    // Auto-resize columns
+    for (let i = 1; i <= headers.length; i++) {
+      sheet.autoResizeColumn(i);
+    }
+    
+    sheet.setFrozenRows(1);
+  }
+  
+  Logger.log(`Wrote ${rows.length} row(s) to ${sheetName}`);
+}
+
+/**
+ * Clears all GTM output sheets
+ */
+function clearGtmOutputSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetNames = ['GTM_Tags', 'GTM_Triggers', 'GTM_Variables', 'GTM_Vendors'];
+  
+  sheetNames.forEach(name => {
+    const sheet = ss.getSheetByName(name);
+    if (sheet) {
+      sheet.clearContents();
+    }
+  });
+  
+  SpreadsheetApp.getUi().alert('Output Sheets Cleared', 
+    'GTM_Tags, GTM_Triggers, GTM_Variables, and GTM_Vendors have been cleared.',
+    SpreadsheetApp.ButtonSet.OK);
+}
+
+/**
+ * Shows the GTM README sheet
+ */
+function showGtmReadme() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('GTM_README');
+  
+  if (!sheet) {
+    sheet = ss.insertSheet('GTM_README');
+    populateGtmReadmeSheet_(sheet);
+  }
+  
+  ss.setActiveSheet(sheet);
+}

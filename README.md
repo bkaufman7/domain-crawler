@@ -4,11 +4,21 @@
 
 ## Overview
 
-This project crawls a client's website, discovers data layer implementations, and builds a comprehensive inventory of:
+This project provides two powerful tools:
+
+### 1. Site Data Layer Tools
+Crawls a client's website, discovers data layer implementations, and builds a comprehensive inventory of:
 - Page templates and URLs
 - Data layer variables and events
 - Requirements mapping by template
 - Platform-specific mappings (GA4, CM360, DV360/SA360)
+
+### 2. GTM Inspector
+Inspects live GTM containers without accessing the GTM UI:
+- Extracts all tags, triggers, and variables
+- Detects vendor IDs (GA4, UA, Google Ads, Floodlight, Meta, TikTok, etc.)
+- Provides detailed configuration analysis
+- **See [GTM_INSPECTOR_README.md](GTM_INSPECTOR_README.md) for full documentation**
 
 ## Project Structure
 
@@ -24,10 +34,12 @@ domain-crawler/
 │   ├── TemplateInference.js       # Auto-classify page templates
 │   ├── RequirementsBuilder.js     # Build template requirements matrix
 │   ├── SummaryExport.js           # Export summary reports
+│   ├── GtmInspector.js            # GTM container inspection tool
 │   └── appsscript.json            # Apps Script manifest
 ├── .clasp.json                    # Clasp configuration
 ├── .claspignore                   # Files to exclude from push
-└── README.md                      # This file
+├── README.md                      # This file
+└── GTM_INSPECTOR_README.md        # GTM Inspector documentation
 ```
 
 ## Setup Instructions
