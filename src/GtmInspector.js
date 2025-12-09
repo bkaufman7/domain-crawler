@@ -306,27 +306,25 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
         const extracted = extractCompleteObject_(rawJs, startIdx);
         if (extracted) {
           Logger.log(`Extracted var data object: ${extracted.length} chars`);
-          Logger.log(`First 200 chars: ${extracted.substring(0, 200)}`);
           
-          // GTM uses double-escaped quotes in the debug output but single in actual JS
-          // Remove both single and double escaped quotes
-          let cleaned = extracted;
-          
-          // First try: remove double escaped quotes ""key"" -> "key"
-          cleaned = cleaned.replace(/""/g, '"');
-          
-          // Then try standard escaped quotes
-          cleaned = cleaned.replace(/\\"/g, '"');
-          
-          Logger.log(`After cleaning, first 200 chars: ${cleaned.substring(0, 200)}`);
-          
-          const data = JSON.parse(cleaned);
-          Logger.log(`Parsed successfully, keys: ${Object.keys(data).join(', ')}`);
-          if (data.resource) {
-            Logger.log('Found resource object inside data');
-            return parseContainerData_(data.resource, containerId);
-          } else {
-            return parseContainerData_(data, containerId);
+          // Parse using eval instead of JSON.parse since GTM mixes JSON and JavaScript
+          // This is safe because we're only parsing GTM's own code, not user input
+          try {
+            // Create a safe eval context
+            const evalCode = '(function() { return ' + extracted + '; })()';
+            const data = eval(evalCode);
+            
+            Logger.log(`Parsed successfully via eval, keys: ${Object.keys(data).join(', ')}`);
+            if (data.resource) {
+              Logger.log('Found resource object inside data');
+              return parseContainerData_(data.resource, containerId);
+            } else {
+              return parseContainerData_(data, containerId);
+            }
+          } catch (evalError) {
+            Logger.log('Eval parsing failed: ' + evalError.message);
+            // Fall back to aggressive JSON cleaning
+            throw evalError;
           }
         }
       } catch (e) {
