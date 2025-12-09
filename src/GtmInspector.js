@@ -617,6 +617,16 @@ function parseGtmTag_(tag, idx, containerId, entities) {
   // Extract name from various possible locations
   let tagName = tag.name || '';
   
+  // GTM stores names in metadata array: ["map", "name", "Tag Name"]
+  if (!tagName && tag.metadata && Array.isArray(tag.metadata)) {
+    for (let i = 0; i < tag.metadata.length; i++) {
+      if (tag.metadata[i] === 'name' && i + 1 < tag.metadata.length) {
+        tagName = tag.metadata[i + 1];
+        break;
+      }
+    }
+  }
+  
   // Try to get name from entities mapping
   // GTM format is typically entities[idx] = ["tag_name", ...]
   if (!tagName && entities && idx in entities) {
@@ -761,6 +771,16 @@ function parseGtmTriggers_(predicates, rules, containerId, entities) {
     // Extract trigger name - GTM rules may not have names in published containers
     let triggerName = rule.name || '';
     
+    // GTM stores names in metadata array: ["map", "name", "Trigger Name"]
+    if (!triggerName && rule.metadata && Array.isArray(rule.metadata)) {
+      for (let i = 0; i < rule.metadata.length; i++) {
+        if (rule.metadata[i] === 'name' && i + 1 < rule.metadata.length) {
+          triggerName = rule.metadata[i + 1];
+          break;
+        }
+      }
+    }
+    
     // Try to get name from entities mapping
     // The entities array has entries for tags, triggers, and variables sequentially
     // Need to offset by number of tags to get trigger names
@@ -878,6 +898,16 @@ function stringifyPredicate_(predicate) {
 function parseGtmVariable_(macro, idx, containerId, entities) {
   // Extract name from various possible locations
   let varName = macro.name || '';
+  
+  // GTM stores names in metadata array: ["map", "name", "Variable Name"]
+  if (!varName && macro.metadata && Array.isArray(macro.metadata)) {
+    for (let i = 0; i < macro.metadata.length; i++) {
+      if (macro.metadata[i] === 'name' && i + 1 < macro.metadata.length) {
+        varName = macro.metadata[i + 1];
+        break;
+      }
+    }
+  }
   
   // Try to get name from entities mapping  
   if (!varName && entities) {
