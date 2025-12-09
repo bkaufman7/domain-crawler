@@ -568,22 +568,26 @@ function parseContainerData_(data, containerId) {
     variables: []
   };
   
+  // Extract entities which may contain name mappings
+  const entities = data.entities || {};
+  Logger.log(`Entities keys: ${Object.keys(entities).join(', ')}`);
+  
   // Extract tags
   if (data.tags && Array.isArray(data.tags)) {
     Logger.log(`Parsing ${data.tags.length} tags`);
-    model.tags = data.tags.map((tag, idx) => parseGtmTag_(tag, idx, containerId, data));
+    model.tags = data.tags.map((tag, idx) => parseGtmTag_(tag, idx, containerId, entities));
   }
   
   // Extract triggers (predicates + rules)
   if (data.predicates && data.rules) {
     Logger.log(`Parsing triggers from ${data.predicates.length} predicates and ${data.rules.length} rules`);
-    model.triggers = parseGtmTriggers_(data.predicates, data.rules, containerId);
+    model.triggers = parseGtmTriggers_(data.predicates, data.rules, containerId, entities);
   }
   
   // Extract variables (macros in GTM terminology)
   if (data.macros && Array.isArray(data.macros)) {
     Logger.log(`Parsing ${data.macros.length} variables`);
-    model.variables = data.macros.map((macro, idx) => parseGtmVariable_(macro, idx, containerId));
+    model.variables = data.macros.map((macro, idx) => parseGtmVariable_(macro, idx, containerId, entities));
   }
   
   Logger.log(`Successfully parsed: ${model.tags.length} tags, ${model.triggers.length} triggers, ${model.variables.length} variables`);
@@ -599,7 +603,7 @@ function parseContainerData_(data, containerId) {
  * @param {Object} data - Full resource data for lookups
  * @returns {Object} Normalized tag object
  */
-function parseGtmTag_(tag, idx, containerId, data) {
+function parseGtmTag_(tag, idx, containerId, entities) {
   // Handle trigger references - can be array, single value, or undefined
   let triggers = '';
   if (tag.tag_id !== undefined && tag.tag_id !== null) {
@@ -610,10 +614,35 @@ function parseGtmTag_(tag, idx, containerId, data) {
     }
   }
   
+  // Extract name from various possible locations
+  let tagName = tag.name || '';
+  
+  // Try to get name from entities mapping
+  // GTM format is typically entities[idx] = ["tag_name", ...]
+  if (!tagName && entities && idx in entities) {
+    const entityData = entities[idx];
+    if (Array.isArray(entityData) && entityData.length > 0) {
+      tagName = entityData[0]; // First element is usually the name
+    }
+  }
+  
+  // If no direct name, try to build one from vtp parameters
+  if (!tagName) {
+    if (tag.vtp_name) {
+      tagName = tag.vtp_name;
+    } else if (tag.vtp_trackingId) {
+      tagName = tag.vtp_trackingId;
+    } else if (tag.vtp_measurementId) {
+      tagName = tag.vtp_measurementId;
+    } else if (tag.vtp_conversionId) {
+      tagName = tag.vtp_conversionId;
+    }
+  }
+  
   const parsed = {
     containerId: containerId,
     id: tag.function || ('tag_' + idx),
-    name: tag.name || '',
+    name: tagName,
     type: identifyTagType_(tag),
     vendor: identifyTagVendor_(tag),
     triggers: triggers,
@@ -725,14 +754,45 @@ function identifyTagVendor_(tag) {
  * @param {string} containerId - Container ID
  * @returns {Array} Normalized trigger objects
  */
-function parseGtmTriggers_(predicates, rules, containerId) {
+function parseGtmTriggers_(predicates, rules, containerId, entities) {
   const triggers = [];
   
   rules.forEach((rule, idx) => {
+    // Extract trigger name - GTM rules may not have names in published containers
+    let triggerName = rule.name || '';
+    
+    // Try to get name from entities mapping
+    // The entities array has entries for tags, triggers, and variables sequentially
+    // Need to offset by number of tags to get trigger names
+    if (!triggerName && entities) {
+      // Entities structure might have trigger names indexed differently
+      // This is a heuristic approach since GTM's internal structure can vary
+      const potentialKeys = Object.keys(entities).filter(k => !isNaN(k)).map(Number).sort((a,b) => a-b);
+      // Look for a key that might correspond to this trigger
+      // Triggers usually come after tags in the entities mapping
+      for (const key of potentialKeys) {
+        const entityData = entities[key];
+        if (Array.isArray(entityData) && entityData.length > 0 && String(entityData[0]).toLowerCase().includes('trigger')) {
+          if (!triggerName) {
+            triggerName = entityData[0];
+            break;
+          }
+        }
+      }
+    }
+    
+    // If no name, try to create a descriptive one from the rule type
+    if (!triggerName && rule.add && rule.add.length > 0) {
+      const firstPred = predicates[rule.add[0]];
+      if (firstPred && firstPred[2]) {
+        triggerName = 'Trigger: ' + String(firstPred[2]).substring(0, 30);
+      }
+    }
+    
     const trigger = {
       containerId: containerId,
       id: 'trigger_' + idx,
-      name: rule.name || '',
+      name: triggerName,
       type: identifyTriggerType_(rule, predicates),
       conditionsSummary: summarizeTriggerConditions_(rule, predicates),
       raw: JSON.stringify(rule)
@@ -815,11 +875,49 @@ function stringifyPredicate_(predicate) {
  * @param {string} containerId - Container ID
  * @returns {Object} Normalized variable object
  */
-function parseGtmVariable_(macro, idx, containerId) {
+function parseGtmVariable_(macro, idx, containerId, entities) {
+  // Extract name from various possible locations
+  let varName = macro.name || '';
+  
+  // Try to get name from entities mapping  
+  if (!varName && entities) {
+    // Variables/macros might have their own index range in entities
+    // Try direct index lookup first
+    const potentialKeys = Object.keys(entities).filter(k => !isNaN(k)).map(Number).sort((a,b) => a-b);
+    for (const key of potentialKeys) {
+      const entityData = entities[key];
+      if (Array.isArray(entityData) && entityData.length > 0) {
+        // Check if this might be our variable by looking at the macro function
+        if (entityData[0] && typeof entityData[0] === 'string') {
+          // Simple heuristic: if index is roughly in macro range, use it
+          if (!varName && key >= idx * 0.5 && key <= idx * 2) {
+            varName = entityData[0];
+            break;
+          }
+        }
+      }
+    }
+  }
+  
+  // If no direct name, try vtp_name (common for Data Layer Variables)
+  if (!varName && macro.vtp_name) {
+    varName = macro.vtp_name;
+  }
+  
+  // If still no name and it's a constant, use the value
+  if (!varName && macro.function === '__k' && macro.vtp_value) {
+    varName = macro.vtp_value;
+  }
+  
+  // For URL variables, extract component type
+  if (!varName && macro.function === '__u' && macro.vtp_component) {
+    varName = macro.vtp_component;
+  }
+  
   const variable = {
     containerId: containerId,
     id: macro.function || ('var_' + idx),
-    name: macro.name || '',
+    name: varName,
     type: identifyVariableType_(macro),
     detailsSummary: summarizeVariableDetails_(macro),
     raw: JSON.stringify(macro)
