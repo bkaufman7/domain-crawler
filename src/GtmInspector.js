@@ -1141,3 +1141,238 @@ function createDebugSheet_(rawJs, containerId) {
   
   Logger.log('Created GTM_DEBUG sheet with container analysis');
 }
+
+/**
+ * Generates a presentable summary/sitemap of GTM container
+ */
+function exportGtmSummary() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+  
+  try {
+    // Get container ID
+    const containerId = getGtmContainerId_();
+    if (!containerId) {
+      ui.alert('No Container Data', 
+        'Please run "Inspect Container" first to generate data.',
+        ui.ButtonSet.OK);
+      return;
+    }
+    
+    // Read data from existing sheets
+    const tags = getSheetDataAsObjects(ss.getSheetByName('GTM_Tags'));
+    const triggers = getSheetDataAsObjects(ss.getSheetByName('GTM_Triggers'));
+    const variables = getSheetDataAsObjects(ss.getSheetByName('GTM_Variables'));
+    const vendors = getSheetDataAsObjects(ss.getSheetByName('GTM_Vendors'));
+    
+    if (tags.length === 0) {
+      ui.alert('No Data Found', 
+        'No tags found. Please run "Inspect Container" first.',
+        ui.ButtonSet.OK);
+      return;
+    }
+    
+    // Create or clear summary sheet
+    let summarySheet = ss.getSheetByName('GTM_SUMMARY');
+    if (summarySheet) {
+      summarySheet.clear();
+    } else {
+      summarySheet = ss.insertSheet('GTM_SUMMARY');
+    }
+    
+    // Build the summary
+    buildGtmSummarySheet_(summarySheet, containerId, tags, triggers, variables, vendors);
+    
+    // Activate the summary sheet
+    ss.setActiveSheet(summarySheet);
+    
+    ui.alert('Summary Created', 
+      'GTM_SUMMARY sheet has been created with a presentable overview.\n\n' +
+      'This sheet is formatted for stakeholder presentations.',
+      ui.ButtonSet.OK);
+    
+  } catch (error) {
+    Logger.log('ERROR in exportGtmSummary: ' + error.stack);
+    ui.alert('Summary Error', error.message, ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * Builds the summary sheet with formatted sections
+ */
+function buildGtmSummarySheet_(sheet, containerId, tags, triggers, variables, vendors) {
+  const data = [];
+  let row = 0;
+  
+  // Header
+  data.push(['GTM Container Summary Report', '', '', '']);
+  data.push(['Container ID:', containerId, '', '']);
+  data.push(['Generated:', new Date().toLocaleString(), '', '']);
+  data.push(['', '', '', '']);
+  
+  // Executive Summary
+  data.push(['EXECUTIVE SUMMARY', '', '', '']);
+  data.push(['Metric', 'Count', '', '']);
+  data.push(['Total Tags', tags.length, '', '']);
+  data.push(['Total Triggers', triggers.length, '', '']);
+  data.push(['Total Variables', variables.length, '', '']);
+  data.push(['Detected Vendors', vendors.length, '', '']);
+  data.push(['', '', '', '']);
+  
+  // Tags by Vendor
+  data.push(['TAGS BY VENDOR', '', '', '']);
+  data.push(['Vendor', 'Count', 'Tag Types', '']);
+  const tagsByVendor = groupBy_(tags, 'vendor');
+  Object.keys(tagsByVendor).sort().forEach(vendor => {
+    const vendorTags = tagsByVendor[vendor];
+    const types = [...new Set(vendorTags.map(t => t.type))].join(', ');
+    data.push([vendor, vendorTags.length, types, '']);
+  });
+  data.push(['', '', '', '']);
+  
+  // Tags by Type
+  data.push(['TAGS BY TYPE', '', '', '']);
+  data.push(['Tag Type', 'Count', 'Vendors', '']);
+  const tagsByType = groupBy_(tags, 'type');
+  Object.keys(tagsByType).sort().forEach(type => {
+    const typeTags = tagsByType[type];
+    const typeVendors = [...new Set(typeTags.map(t => t.vendor))].join(', ');
+    data.push([type, typeTags.length, typeVendors, '']);
+  });
+  data.push(['', '', '', '']);
+  
+  // Vendor IDs Detected
+  data.push(['VENDOR IDS DETECTED', '', '', '']);
+  data.push(['Vendor', 'Type', 'ID', 'Notes']);
+  vendors.forEach(v => {
+    data.push([v.vendor, v.type, v.id, v.extra || '']);
+  });
+  data.push(['', '', '', '']);
+  
+  // Variables by Type
+  data.push(['VARIABLES BY TYPE', '', '', '']);
+  data.push(['Variable Type', 'Count', 'Examples', '']);
+  const varsByType = groupBy_(variables, 'type');
+  Object.keys(varsByType).sort().forEach(type => {
+    const typeVars = varsByType[type];
+    const examples = typeVars.slice(0, 3).map(v => v.name || v.id).filter(n => n).join(', ');
+    data.push([type, typeVars.length, examples, '']);
+  });
+  data.push(['', '', '', '']);
+  
+  // Trigger Types
+  data.push(['TRIGGER TYPES', '', '', '']);
+  data.push(['Trigger Type', 'Count', '', '']);
+  const triggersByType = groupBy_(triggers, 'type');
+  Object.keys(triggersByType).sort().forEach(type => {
+    data.push([type, triggersByType[type].length, '', '']);
+  });
+  data.push(['', '', '', '']);
+  
+  // Detailed Tag List
+  data.push(['COMPLETE TAG LIST', '', '', '']);
+  data.push(['Tag Name/ID', 'Type', 'Vendor', 'Triggers']);
+  tags.forEach(tag => {
+    data.push([
+      tag.name || tag.id,
+      tag.type,
+      tag.vendor,
+      tag.triggers
+    ]);
+  });
+  
+  // Write all data at once
+  if (data.length > 0) {
+    sheet.getRange(1, 1, data.length, 4).setValues(data);
+  }
+  
+  // Format the sheet
+  formatGtmSummarySheet_(sheet);
+}
+
+/**
+ * Applies formatting to summary sheet
+ */
+function formatGtmSummarySheet_(sheet) {
+  // Main header
+  sheet.getRange('A1:D1').merge()
+    .setFontSize(16)
+    .setFontWeight('bold')
+    .setBackground('#4285F4')
+    .setFontColor('#FFFFFF')
+    .setHorizontalAlignment('center');
+  
+  // Metadata rows
+  sheet.getRange('A2:A3').setFontWeight('bold');
+  
+  // Find all section headers (all caps text in column A)
+  const lastRow = sheet.getLastRow();
+  for (let i = 1; i <= lastRow; i++) {
+    const cellValue = sheet.getRange(i, 1).getValue();
+    if (typeof cellValue === 'string' && cellValue === cellValue.toUpperCase() && cellValue.length > 3) {
+      // Section header
+      sheet.getRange(i, 1, 1, 4).merge()
+        .setFontSize(12)
+        .setFontWeight('bold')
+        .setBackground('#E8F0FE')
+        .setFontColor('#1A73E8');
+      
+      // Sub-header (next row if it exists)
+      if (i + 1 <= lastRow) {
+        sheet.getRange(i + 1, 1, 1, 4)
+          .setFontWeight('bold')
+          .setBackground('#F1F3F4');
+      }
+    }
+  }
+  
+  // Column widths
+  sheet.setColumnWidth(1, 300);
+  sheet.setColumnWidth(2, 150);
+  sheet.setColumnWidth(3, 300);
+  sheet.setColumnWidth(4, 200);
+  
+  // Freeze header rows
+  sheet.setFrozenRows(3);
+  
+  // Add borders
+  sheet.getRange(1, 1, lastRow, 4).setBorder(
+    true, true, true, true, true, true,
+    '#CCCCCC', SpreadsheetApp.BorderStyle.SOLID
+  );
+}
+
+/**
+ * Helper function to group array of objects by property
+ */
+function groupBy_(array, property) {
+  return array.reduce((groups, item) => {
+    const key = item[property] || 'Unknown';
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(item);
+    return groups;
+  }, {});
+}
+
+/**
+ * Helper function to convert sheet data to array of objects
+ */
+function getSheetDataAsObjects(sheet) {
+  if (!sheet) return [];
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+  
+  const headers = data[0];
+  const rows = data.slice(1);
+  
+  return rows.map(row => {
+    const obj = {};
+    headers.forEach((header, i) => {
+      obj[header] = row[i];
+    });
+    return obj;
+  });
+}

@@ -34,6 +34,8 @@ function onOpen() {
     .addItem('Setup GTM Sheets', 'setupGtmInspectorSheets')
     .addItem('Inspect Container', 'inspectGtmContainer')
     .addSeparator()
+    .addItem('📊 Export Summary Report', 'exportGtmSummary')
+    .addSeparator()
     .addItem('Clear Output Sheets', 'clearGtmOutputSheets')
     .addItem('Show README', 'showGtmReadme')
     .addToUi();
