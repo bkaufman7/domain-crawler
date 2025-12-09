@@ -295,7 +295,35 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
     
     // Modern GTM containers use different patterns. Try multiple strategies:
     
-    // Strategy 0: Direct google_tag_manager object (most common modern format)
+    // Strategy 0: Variable assignment with resource object
+    // Format: var data = { "resource": {...} }
+    const varDataPattern = /var\s+data\s*=\s*\{/;
+    const varMatch = rawJs.match(varDataPattern);
+    if (varMatch) {
+      Logger.log('Found var data = {...} pattern');
+      try {
+        const startIdx = rawJs.indexOf(varMatch[0]) + varMatch[0].length - 1;
+        const extracted = extractCompleteObject_(rawJs, startIdx);
+        if (extracted) {
+          Logger.log(`Extracted var data object: ${extracted.length} chars`);
+          // Remove escaped quotes that GTM uses
+          const cleaned = extracted.replace(/\\"/g, '"');
+          const data = JSON.parse(cleaned);
+          Logger.log(`Parsed successfully, keys: ${Object.keys(data).join(', ')}`);
+          if (data.resource) {
+            Logger.log('Found resource object inside data');
+            return parseContainerData_(data.resource, containerId);
+          } else {
+            return parseContainerData_(data, containerId);
+          }
+        }
+      } catch (e) {
+        Logger.log('var data pattern failed: ' + e.message);
+        Logger.log('Stack: ' + e.stack);
+      }
+    }
+    
+    // Strategy 1: Direct google_tag_manager object (most common modern format)
     // Format: if(window.google_tag_manager)google_tag_manager["GTM-XXX"]={...}
     const directGtmPattern = new RegExp('google_tag_manager\\["' + containerId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"\\]\\s*=\\s*\\{');
     const directMatch = rawJs.match(directGtmPattern);
@@ -316,7 +344,7 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
       }
     }
     
-    // Strategy 1: Look for .push() calls with container data
+    // Strategy 2: Look for .push() calls with container data
     // Modern format: gtmDomain.push({"gtm.start":...}) or similar
     const pushMatch = rawJs.match(/\.push\s*\(\s*(\{[^)]+\})\s*\)/);
     if (pushMatch) {
@@ -331,7 +359,7 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
       }
     }
     
-    // Strategy 2: Look for window assignment patterns
+    // Strategy 3: Look for window assignment patterns
     // Format: window.google_tag_manager[containerId] = {...}
     const windowPattern = new RegExp('google_tag_manager\\s*\\[\\s*["\']' + containerId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '["\']\\s*\\]\\s*=\\s*\\{');
     const windowMatch = rawJs.match(windowPattern);
@@ -349,7 +377,7 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
       }
     }
     
-    // Strategy 3: Look for old-style {"resource":...} pattern
+    // Strategy 4: Look for old-style {"resource":...} pattern
     const resourceMatch = rawJs.match(/\{"resource":\{/);
     if (resourceMatch) {
       Logger.log('Found {"resource":...} pattern');
@@ -367,7 +395,7 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
       }
     }
     
-    // Strategy 4: Aggressive search for any large object with tags/macros/rules
+    // Strategy 5: Aggressive search for any large object with tags/macros/rules
     Logger.log('Attempting aggressive object extraction...');
     const extracted = findContainerDataObject_(rawJs);
     if (extracted) {
