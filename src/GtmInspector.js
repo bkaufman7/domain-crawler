@@ -1076,6 +1076,49 @@ function clearGtmOutputSheets() {
 }
 
 /**
+ * Deletes all sheets except GTM_README, GTM_CONFIG, and DETAILS
+ */
+function deleteAllExceptEssentials() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+  
+  // Confirm before deleting
+  const response = ui.alert(
+    'Delete All Sheets?',
+    'This will DELETE all sheets except:\n' +
+    '  • GTM_README\n' +
+    '  • GTM_CONFIG\n' +
+    '  • DETAILS\n\n' +
+    'This action cannot be undone. Continue?',
+    ui.ButtonSet.YES_NO
+  );
+  
+  if (response !== ui.Button.YES) {
+    return;
+  }
+  
+  const keepSheets = ['GTM_README', 'GTM_CONFIG', 'DETAILS'];
+  const allSheets = ss.getSheets();
+  let deletedCount = 0;
+  
+  allSheets.forEach(sheet => {
+    const sheetName = sheet.getName();
+    if (!keepSheets.includes(sheetName)) {
+      ss.deleteSheet(sheet);
+      deletedCount++;
+      Logger.log(`Deleted sheet: ${sheetName}`);
+    }
+  });
+  
+  ui.alert('Sheets Deleted', 
+    `Deleted ${deletedCount} sheet(s).\n\n` +
+    'Kept: GTM_README, GTM_CONFIG, DETAILS',
+    ui.ButtonSet.OK);
+  
+  Logger.log(`Deleted ${deletedCount} sheets, kept ${keepSheets.length} essential sheets`);
+}
+
+/**
  * Shows the GTM README sheet
  */
 function showGtmReadme() {

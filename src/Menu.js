@@ -37,6 +37,8 @@ function onOpen() {
     .addItem('📊 Export Summary Report', 'exportGtmSummary')
     .addSeparator()
     .addItem('Clear Output Sheets', 'clearGtmOutputSheets')
+    .addItem('🗑️ Delete All Except Essentials', 'deleteAllExceptEssentials')
+    .addSeparator()
     .addItem('Show README', 'showGtmReadme')
     .addToUi();
     

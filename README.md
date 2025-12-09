@@ -1,26 +1,134 @@
-# Site Data Layer Inventory & Glossary
+# Site Data Layer Inventory & GTM Inspector
 
-**Production-grade Google Apps Script + Sheets solution for automated data layer discovery and documentation.**
+**Production-grade Google Apps Script + Sheets solution for automated data layer discovery, documentation, and GTM container analysis.**
 
-## Overview
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![Apps Script](https://img.shields.io/badge/Apps%20Script-V8-blue.svg)](https://developers.google.com/apps-script)
+[![Status](https://img.shields.io/badge/Status-Production-green.svg)]()
 
-This project provides two powerful tools:
+> **Author**: Brian Kaufman - Associate Director, Platform Solutions, Horizon Media  
+> **Last Updated**: December 8, 2025  
+> **Version**: 1.0.0
 
-### 1. Site Data Layer Tools
-Crawls a client's website, discovers data layer implementations, and builds a comprehensive inventory of:
-- Page templates and URLs
-- Data layer variables and events
-- Requirements mapping by template
-- Platform-specific mappings (GA4, CM360, DV360/SA360)
+---
 
-### 2. GTM Inspector
-Inspects live GTM containers without accessing the GTM UI:
-- Extracts all tags, triggers, and variables
-- Detects vendor IDs (GA4, UA, Google Ads, Floodlight, Meta, TikTok, etc.)
-- Provides detailed configuration analysis
-- **See [GTM_INSPECTOR_README.md](GTM_INSPECTOR_README.md) for full documentation**
+## 📋 Table of Contents
 
-## Project Structure
+- [TL;DR](#tldr)
+- [Summary](#summary)
+- [Quick Start](#quick-start)
+- [Features](#features)
+  - [Site Data Layer Tools](#site-data-layer-tools)
+  - [GTM Inspector](#gtm-inspector)
+- [Installation & Setup](#installation--setup)
+- [Usage Guide](#usage-guide)
+  - [Data Layer Crawling Workflow](#data-layer-crawling-workflow)
+  - [GTM Inspection Workflow](#gtm-inspection-workflow)
+- [Architecture Overview](#architecture-overview)
+- [Module Documentation](#module-documentation)
+- [Data Structures](#data-structures)
+- [Technical Specifications](#technical-specifications)
+- [Glossary](#glossary)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## 🚀 TL;DR
+
+**What it does**: Automatically crawls websites to discover data layer implementations AND inspects live GTM containers—all within Google Sheets.
+
+**Use cases**: 
+- Client audits & onboarding
+- Data layer documentation
+- GTM container analysis
+- GA4/CM360/DV360 migration planning
+- Template requirements mapping
+
+**How to use**:
+1. Create a Google Sheet
+2. Bind this Apps Script project
+3. Run "Setup Sheet Structure"
+4. For crawling: Configure domain → Run Crawl → Analyze Data Layers
+5. For GTM: Enter container ID → Inspect Container → Export Summary
+
+**Key benefits**:
+- ✅ No manual clicking through sites
+- ✅ No GTM UI access needed
+- ✅ Automatic resume on timeout
+- ✅ Production-ready output for stakeholders
+- ✅ Vendor detection (GA4, Ads, Floodlight, Meta, TikTok, etc.)
+
+---
+
+## 📖 Summary
+
+This project is a **comprehensive analytics and tag management auditing system** built entirely on Google Apps Script and Google Sheets. It combines two powerful toolsets:
+
+### 1. **Site Data Layer Tools**
+Crawls client websites to discover, parse, and catalog data layer implementations. Builds a complete inventory of:
+- Page URLs and templates
+- Data layer variables (flattened from nested objects)
+- Events and their payloads
+- Template-specific requirements
+- Platform mappings for GA4, Campaign Manager 360, and DV360/SA360
+
+### 2. **GTM Container Inspector**
+Fetches and parses live GTM container JavaScript to extract:
+- All tags with types and vendors
+- Trigger configurations and conditions
+- Variable definitions
+- Vendor tracking IDs (measurement IDs, pixel IDs, conversion IDs)
+
+Both tools produce **stakeholder-ready documentation** in Google Sheets format, eliminating hours of manual work and providing consistent, comprehensive audits.
+
+---
+
+## ⚡ Quick Start
+
+### Prerequisites
+- Google account
+- Node.js and npm (for local development)
+- Clasp CLI: `npm install -g @google/clasp`
+
+### 3-Minute Setup
+
+```bash
+# Clone repository
+git clone https://github.com/bkaufman7/domain-crawler.git
+cd domain-crawler
+
+# Login to Google
+clasp login
+
+# Push to Apps Script (already configured)
+clasp push
+
+# Open in Apps Script Editor
+clasp open
+```
+
+### First Use
+
+1. **Create a new Google Sheet** (one per client/project)
+2. **Extensions → Apps Script** → Copy script ID from this project
+3. **Reload the Sheet** - custom menus will appear
+4. **Site Data Layer Tools → Setup Sheet Structure**
+5. You're ready to crawl or inspect!
+
+---
+
+## ✨ Features
+
+### Site Data Layer Tools
+
+#### 🕷️ Intelligent Web Crawling
+- **Breadth-first crawling** with configurable depth limits
+- **Automatic resume** on execution timeout (Apps Script 6-minute limit)
+- **Status tracking** (Pending/Fetched/Error) for reliable incremental crawling
+- **Domain filtering** - stays within configured domain boundaries
+- **Respect robots.txt** patterns (configurable)
 
 ```
 domain-crawler/
