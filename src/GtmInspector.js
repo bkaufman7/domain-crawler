@@ -287,98 +287,244 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
   };
   
   try {
-    // GTM usually has a resource object that looks like:
-    // ({"resource":{"macros":[...],"tags":[...],"predicates":[...],"rules":[...]},...)
+    Logger.log('Starting GTM JS parsing...');
+    Logger.log(`JS length: ${rawJs.length} characters`);
     
-    // Strategy: find the resource object and extract it
-    const resourceMatch = rawJs.match(/\{"resource":\{[^}]+/);
+    // Modern GTM containers use different patterns. Try multiple strategies:
     
-    if (!resourceMatch) {
-      Logger.log('WARNING: Could not find resource object in GTM JS');
-      return model;
-    }
-    
-    // Find the complete resource object by counting braces
-    const startIdx = rawJs.indexOf('{"resource"');
-    let braceCount = 0;
-    let endIdx = startIdx;
-    let inString = false;
-    let escapeNext = false;
-    
-    for (let i = startIdx; i < rawJs.length; i++) {
-      const char = rawJs[i];
-      
-      if (escapeNext) {
-        escapeNext = false;
-        continue;
-      }
-      
-      if (char === '\\') {
-        escapeNext = true;
-        continue;
-      }
-      
-      if (char === '"') {
-        inString = !inString;
-        continue;
-      }
-      
-      if (inString) continue;
-      
-      if (char === '{') braceCount++;
-      if (char === '}') {
-        braceCount--;
-        if (braceCount === 0) {
-          endIdx = i + 1;
-          break;
+    // Strategy 1: Look for .push() calls with container data
+    // Modern format: gtmDomain.push({"gtm.start":...}) or similar
+    const pushMatch = rawJs.match(/\.push\s*\(\s*(\{[^)]+\})\s*\)/);
+    if (pushMatch) {
+      Logger.log('Found .push() pattern');
+      try {
+        const data = extractJsonFromPush_(rawJs);
+        if (data) {
+          return parseContainerData_(data, containerId);
         }
+      } catch (e) {
+        Logger.log('Push pattern failed: ' + e.message);
       }
     }
     
-    if (endIdx <= startIdx) {
-      Logger.log('WARNING: Could not extract complete resource object');
-      return model;
+    // Strategy 2: Look for window assignment patterns
+    // Format: window.google_tag_manager[containerId] = {...}
+    const windowPattern = new RegExp('google_tag_manager\\s*\\[\\s*["\']' + containerId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '["\']\\s*\\]\\s*=\\s*\\{');
+    const windowMatch = rawJs.match(windowPattern);
+    if (windowMatch) {
+      Logger.log('Found window.google_tag_manager pattern');
+      try {
+        const startIdx = rawJs.indexOf(windowMatch[0]) + windowMatch[0].length - 1;
+        const extracted = extractCompleteObject_(rawJs, startIdx);
+        if (extracted) {
+          const data = JSON.parse(extracted);
+          return parseContainerData_(data, containerId);
+        }
+      } catch (e) {
+        Logger.log('Window pattern failed: ' + e.message);
+      }
     }
     
-    let resourceJson = rawJs.substring(startIdx, endIdx);
-    
-    // Try to parse
-    let resource;
-    try {
-      resource = JSON.parse(resourceJson);
-    } catch (e) {
-      Logger.log('WARNING: Could not parse resource JSON directly: ' + e.message);
-      return model;
+    // Strategy 3: Look for old-style {"resource":...} pattern
+    const resourceMatch = rawJs.match(/\{"resource":\{/);
+    if (resourceMatch) {
+      Logger.log('Found {"resource":...} pattern');
+      try {
+        const startIdx = rawJs.indexOf('{"resource"');
+        const extracted = extractCompleteObject_(rawJs, startIdx);
+        if (extracted) {
+          const resource = JSON.parse(extracted);
+          if (resource && resource.resource) {
+            return parseContainerData_(resource.resource, containerId);
+          }
+        }
+      } catch (e) {
+        Logger.log('Resource pattern failed: ' + e.message);
+      }
     }
     
-    if (!resource || !resource.resource) {
-      Logger.log('WARNING: Parsed object does not have expected structure');
-      return model;
+    // Strategy 4: Aggressive search for any large object with tags/macros/rules
+    Logger.log('Attempting aggressive object extraction...');
+    const extracted = findContainerDataObject_(rawJs);
+    if (extracted) {
+      Logger.log('Found potential container data via aggressive search');
+      return parseContainerData_(extracted, containerId);
     }
     
-    const data = resource.resource;
-    
-    // Extract tags
-    if (data.tags && Array.isArray(data.tags)) {
-      model.tags = data.tags.map((tag, idx) => parseGtmTag_(tag, idx, containerId, data));
-    }
-    
-    // Extract triggers (predicates + rules)
-    if (data.predicates && data.rules) {
-      model.triggers = parseGtmTriggers_(data.predicates, data.rules, containerId);
-    }
-    
-    // Extract variables (macros in GTM terminology)
-    if (data.macros && Array.isArray(data.macros)) {
-      model.variables = data.macros.map((macro, idx) => parseGtmVariable_(macro, idx, containerId));
-    }
-    
-    Logger.log(`Successfully parsed GTM resource: ${model.tags.length} tags, ${model.triggers.length} triggers, ${model.variables.length} variables`);
+    Logger.log('WARNING: Could not find container data in GTM JS using any strategy');
+    Logger.log('First 500 chars: ' + rawJs.substring(0, 500));
     
   } catch (error) {
     Logger.log('ERROR parsing GTM JS: ' + error.message);
     Logger.log(error.stack);
   }
+  
+  return model;
+}
+
+/**
+ * Extracts a complete JSON object starting from a given index
+ * @param {string} str - Source string
+ * @param {number} startIdx - Starting index (should point to opening {)
+ * @returns {string} Complete JSON object string
+ */
+function extractCompleteObject_(str, startIdx) {
+  let braceCount = 0;
+  let endIdx = startIdx;
+  let inString = false;
+  let escapeNext = false;
+  
+  for (let i = startIdx; i < str.length && i < startIdx + 5000000; i++) {
+    const char = str[i];
+    
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+    
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    
+    if (inString) continue;
+    
+    if (char === '{') braceCount++;
+    if (char === '}') {
+      braceCount--;
+      if (braceCount === 0) {
+        endIdx = i + 1;
+        break;
+      }
+    }
+  }
+  
+  if (endIdx > startIdx) {
+    return str.substring(startIdx, endIdx);
+  }
+  return null;
+}
+
+/**
+ * Extracts JSON from .push() pattern
+ * @param {string} rawJs - Raw JavaScript
+ * @returns {Object} Parsed container data
+ */
+function extractJsonFromPush_(rawJs) {
+  // Look for large objects being pushed
+  const pushMatches = rawJs.matchAll(/\.push\s*\(\s*(\{)/g);
+  
+  for (const match of pushMatches) {
+    const startIdx = match.index + match[0].length - 1;
+    const extracted = extractCompleteObject_(rawJs, startIdx);
+    
+    if (extracted && extracted.length > 1000) {
+      try {
+        const data = JSON.parse(extracted);
+        // Check if it looks like container data
+        if (data.tags || data.macros || data.resource) {
+          return data.resource || data;
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Aggressively searches for container data object
+ * @param {string} rawJs - Raw JavaScript
+ * @returns {Object} Container data object
+ */
+function findContainerDataObject_(rawJs) {
+  // Look for any large object that has tags, macros, and rules/predicates
+  const objectStarts = [];
+  
+  for (let i = 0; i < rawJs.length - 100; i++) {
+    if (rawJs[i] === '{') {
+      objectStarts.push(i);
+      if (objectStarts.length > 1000) {
+        objectStarts.shift(); // Keep last 1000 to avoid memory issues
+      }
+    }
+  }
+  
+  Logger.log(`Found ${objectStarts.length} potential object starts`);
+  
+  // Try to extract and parse largest objects first
+  const candidates = [];
+  
+  for (const startIdx of objectStarts) {
+    const extracted = extractCompleteObject_(rawJs, startIdx);
+    if (extracted && extracted.length > 5000) {
+      candidates.push({ startIdx, extracted });
+    }
+  }
+  
+  Logger.log(`Found ${candidates.length} large objects to check`);
+  
+  // Sort by size descending
+  candidates.sort((a, b) => b.extracted.length - a.extracted.length);
+  
+  // Try to parse each candidate
+  for (const candidate of candidates.slice(0, 20)) {
+    try {
+      const data = JSON.parse(candidate.extracted);
+      
+      // Check if it looks like GTM container data
+      if ((data.tags && Array.isArray(data.tags)) ||
+          (data.macros && Array.isArray(data.macros))) {
+        Logger.log(`Found container data object (${candidate.extracted.length} chars)`);
+        return data;
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Parses container data into normalized model
+ * @param {Object} data - Container data object
+ * @param {string} containerId - Container ID
+ * @returns {Object} Model with tags, triggers, variables
+ */
+function parseContainerData_(data, containerId) {
+  const model = {
+    tags: [],
+    triggers: [],
+    variables: []
+  };
+  
+  // Extract tags
+  if (data.tags && Array.isArray(data.tags)) {
+    Logger.log(`Parsing ${data.tags.length} tags`);
+    model.tags = data.tags.map((tag, idx) => parseGtmTag_(tag, idx, containerId, data));
+  }
+  
+  // Extract triggers (predicates + rules)
+  if (data.predicates && data.rules) {
+    Logger.log(`Parsing triggers from ${data.predicates.length} predicates and ${data.rules.length} rules`);
+    model.triggers = parseGtmTriggers_(data.predicates, data.rules, containerId);
+  }
+  
+  // Extract variables (macros in GTM terminology)
+  if (data.macros && Array.isArray(data.macros)) {
+    Logger.log(`Parsing ${data.macros.length} variables`);
+    model.variables = data.macros.map((macro, idx) => parseGtmVariable_(macro, idx, containerId));
+  }
+  
+  Logger.log(`Successfully parsed: ${model.tags.length} tags, ${model.triggers.length} triggers, ${model.variables.length} variables`);
   
   return model;
 }
