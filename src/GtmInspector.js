@@ -296,7 +296,7 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
     // Modern GTM containers use different patterns. Try multiple strategies:
     
     // Strategy 0: Variable assignment with resource object
-    // Format: var data = { "resource": {...} }
+    // Format: var data = { "resource": {...} } or var data = { ""resource"": {...} }
     const varDataPattern = /var\s+data\s*=\s*\{/;
     const varMatch = rawJs.match(varDataPattern);
     if (varMatch) {
@@ -306,8 +306,20 @@ function extractContainerModelFromRawJs_(rawJs, containerId) {
         const extracted = extractCompleteObject_(rawJs, startIdx);
         if (extracted) {
           Logger.log(`Extracted var data object: ${extracted.length} chars`);
-          // Remove escaped quotes that GTM uses
-          const cleaned = extracted.replace(/\\"/g, '"');
+          Logger.log(`First 200 chars: ${extracted.substring(0, 200)}`);
+          
+          // GTM uses double-escaped quotes in the debug output but single in actual JS
+          // Remove both single and double escaped quotes
+          let cleaned = extracted;
+          
+          // First try: remove double escaped quotes ""key"" -> "key"
+          cleaned = cleaned.replace(/""/g, '"');
+          
+          // Then try standard escaped quotes
+          cleaned = cleaned.replace(/\\"/g, '"');
+          
+          Logger.log(`After cleaning, first 200 chars: ${cleaned.substring(0, 200)}`);
+          
           const data = JSON.parse(cleaned);
           Logger.log(`Parsed successfully, keys: ${Object.keys(data).join(', ')}`);
           if (data.resource) {
