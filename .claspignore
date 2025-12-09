@@ -1,0 +1,7 @@
+# Ignore everything at root except src
+/*
+!/src/
+
+# But ignore these patterns anywhere
+**/.git/**
+**/node_modules/**
