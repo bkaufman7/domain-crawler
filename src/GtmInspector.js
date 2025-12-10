@@ -39,12 +39,16 @@ function setupGtmInspectorSheets() {
     configSheet.setColumnWidth(2, 400);
   }
   
+  // Set green tab color for GTM sheets
+  configSheet.setTabColor('#34A853');
+  
   // Create README sheet if it doesn't exist
   let readmeSheet = ss.getSheetByName('GTM_README');
   if (!readmeSheet) {
     readmeSheet = ss.insertSheet('GTM_README');
     populateGtmReadmeSheet_(readmeSheet);
   }
+  readmeSheet.setTabColor('#34A853');
   
   Logger.log('GTM Inspector sheets initialized');
 }
@@ -196,17 +200,20 @@ function inspectGtmContainer() {
     const vendors = analyzeVendorsFromRawJs_(rawJs, containerId, model.tags);
     Logger.log(`Detected ${vendors.length} vendor instances`);
     
+    // Create preview sheet with RAW unparsed data from GTM
+    createRawDataPreviewSheet_(model.rawData, containerId);
+    
     // Write to sheets
     writeGtmTable_('GTM_Tags', 
-      ['containerId', 'id', 'name', 'type', 'vendor', 'triggers', 'raw'],
+      ['containerId', 'id', 'name', 'type', 'vendor', 'priority', 'triggers', 'consent', 'firingOption', 'setupTags', 'raw'],
       model.tags);
     
     writeGtmTable_('GTM_Triggers',
-      ['containerId', 'id', 'name', 'type', 'conditionsSummary', 'raw'],
+      ['containerId', 'id', 'name', 'type', 'eventName', 'conditionsSummary', 'exceptions', 'raw'],
       model.triggers);
     
     writeGtmTable_('GTM_Variables',
-      ['containerId', 'id', 'name', 'type', 'detailsSummary', 'raw'],
+      ['containerId', 'id', 'name', 'type', 'defaultValue', 'dataLayerPath', 'detailsSummary', 'raw'],
       model.variables);
     
     writeGtmTable_('GTM_Vendors',
@@ -559,13 +566,20 @@ function findContainerDataObject_(rawJs) {
  * Parses container data into normalized model
  * @param {Object} data - Container data object
  * @param {string} containerId - Container ID
- * @returns {Object} Model with tags, triggers, variables
+ * @returns {Object} Model with tags, triggers, variables, and raw data
  */
 function parseContainerData_(data, containerId) {
   const model = {
     tags: [],
     triggers: [],
-    variables: []
+    variables: [],
+    rawData: {
+      tags: data.tags || [],
+      predicates: data.predicates || [],
+      rules: data.rules || [],
+      macros: data.macros || [],
+      entities: data.entities || {}
+    }
   };
   
   // Extract entities which may contain name mappings
@@ -657,13 +671,23 @@ function parseGtmTag_(tag, idx, containerId, entities) {
     }
   }
   
+  // Extract enhanced metadata
+  const priority = tag.priority || 0;
+  const consent = parseConsentSettings_(tag);
+  const firingOption = parseTagFiringOption_(tag);
+  const setupTags = extractSetupTags_(tag);
+  
   const parsed = {
     containerId: containerId,
     id: tag.function || ('tag_' + idx),
     name: tagName,
     type: identifyTagType_(tag),
     vendor: identifyTagVendor_(tag),
+    priority: priority,
     triggers: triggers,
+    consent: consent,
+    firingOption: firingOption,
+    setupTags: setupTags.join(', '),
     raw: JSON.stringify(tag)
   };
   
@@ -766,6 +790,60 @@ function identifyTagVendor_(tag) {
 }
 
 /**
+ * Parse consent settings from tag
+ * @param {Object} tag - Raw tag object
+ * @return {string} Consent types (e.g., "ad_storage, analytics_storage")
+ */
+function parseConsentSettings_(tag) {
+  if (!tag.consent || !Array.isArray(tag.consent)) {
+    return 'None';
+  }
+  
+  // Format: ["list", "ad_storage", "analytics_storage"]
+  if (tag.consent[0] === 'list') {
+    const consentTypes = tag.consent.slice(1).filter(x => typeof x === 'string');
+    return consentTypes.length > 0 ? consentTypes.join(', ') : 'None';
+  }
+  
+  return 'None';
+}
+
+/**
+ * Parse tag firing option
+ * @param {Object} tag - Raw tag object
+ * @return {string} "Once per event", "Once per page", or "Unlimited"
+ */
+function parseTagFiringOption_(tag) {
+  if (tag.once_per_event === true) {
+    return 'Once per event';
+  }
+  if (tag.once_per_load === true) {
+    return 'Once per page';
+  }
+  return 'Unlimited';
+}
+
+/**
+ * Extract setup tags (tags that must fire before this one)
+ * @param {Object} tag - Raw tag object
+ * @return {Array<number>} Array of setup tag IDs
+ */
+function extractSetupTags_(tag) {
+  const setupTags = [];
+  
+  // Format: ["list", ["tag", 631, 0]]
+  if (tag.setup_tags && Array.isArray(tag.setup_tags)) {
+    for (const item of tag.setup_tags) {
+      if (Array.isArray(item) && item[0] === 'tag' && typeof item[1] === 'number') {
+        setupTags.push(item[1]);
+      }
+    }
+  }
+  
+  return setupTags;
+}
+
+/**
  * Parses GTM triggers from predicates and rules
  * @param {Array} predicates - Predicate definitions
  * @param {Array} rules - Rule definitions
@@ -818,12 +896,18 @@ function parseGtmTriggers_(predicates, rules, containerId, entities) {
       }
     }
     
+    // Extract enhanced metadata
+    const exceptions = extractExceptionConditions_(rule, predicates);
+    const eventName = extractEventName_(rule, predicates);
+    
     const trigger = {
       containerId: containerId,
       id: 'trigger_' + idx,
       name: triggerName,
       type: identifyTriggerType_(rule, predicates),
+      eventName: eventName,
       conditionsSummary: summarizeTriggerConditions_(rule, predicates),
+      exceptions: exceptions,
       raw: JSON.stringify(rule)
     };
     
@@ -898,6 +982,62 @@ function stringifyPredicate_(predicate) {
 }
 
 /**
+ * Extract exception conditions (unless predicates) from trigger rule
+ * @param {Object} rule - Runtime rule object
+ * @param {Array} predicates - All predicates
+ * @return {string} Exception summary
+ */
+function extractExceptionConditions_(rule, predicates) {
+  const exceptions = [];
+  
+  // Check for unless conditions in rule structure
+  if (rule.unless && Array.isArray(rule.unless)) {
+    rule.unless.forEach(predicateId => {
+      if (predicates[predicateId]) {
+        const pred = predicates[predicateId];
+        exceptions.push(stringifyPredicate_(pred));
+      }
+    });
+  }
+  
+  return exceptions.length > 0 ? exceptions.join('; ') : 'None';
+}
+
+/**
+ * Extract event name for custom event triggers
+ * @param {Object} rule - Runtime rule object
+ * @param {Array} predicates - All predicates
+ * @return {string} Event name or empty string
+ */
+function extractEventName_(rule, predicates) {
+  // Look for custom event predicates in the add conditions
+  if (!rule.add || !Array.isArray(rule.add)) return '';
+  
+  for (const predicateId of rule.add) {
+    const predicate = predicates[predicateId];
+    if (!predicate || !Array.isArray(predicate)) continue;
+    
+    // Check if this is checking the event variable (macro 0 is usually 'event')
+    // Format: ["equals", ["macro", 0], "event_name"]
+    if (predicate[0] === 'equals' || predicate[0] === 'cn') {
+      const arg0 = predicate[1];
+      if (Array.isArray(arg0) && arg0[0] === 'macro' && arg0[1] === 0) {
+        // This is checking the event variable
+        const eventValue = predicate[2];
+        if (typeof eventValue === 'string' && eventValue.length > 0 && eventValue.length < 100) {
+          // Filter out URLs and common non-event patterns
+          if (!eventValue.startsWith('http') && !eventValue.startsWith('/')) {
+            return eventValue;
+          }
+        }
+      }
+    }
+  }
+  
+  return '';
+}
+
+/**
  * Parses a GTM variable (macro)
  * @param {Object} macro - Macro object
  * @param {number} idx - Index
@@ -966,11 +1106,17 @@ function parseGtmVariable_(macro, idx, containerId, entities) {
     }
   }
   
+  // Extract enhanced metadata
+  const defaultValue = extractDefaultValue_(macro);
+  const dataLayerPath = extractDataLayerPath_(macro);
+  
   const variable = {
     containerId: containerId,
     id: macro.function || ('var_' + idx),
     name: varName,
     type: identifyVariableType_(macro),
+    defaultValue: defaultValue,
+    dataLayerPath: dataLayerPath,
     detailsSummary: summarizeVariableDetails_(macro),
     raw: JSON.stringify(macro)
   };
@@ -1013,6 +1159,38 @@ function summarizeVariableDetails_(macro) {
   }
   if (macro.vtp_value) {
     return 'Value: ' + String(macro.vtp_value).substring(0, 50);
+  }
+  
+  return '';
+}
+
+/**
+ * Extract default value from variable
+ * @param {Object} macro - Raw macro object
+ * @return {string} Default value or empty string
+ */
+function extractDefaultValue_(macro) {
+  if (macro.vtp_setDefaultValue === true && macro.vtp_defaultValue !== undefined) {
+    const val = String(macro.vtp_defaultValue);
+    return val.length > 100 ? val.substring(0, 100) + '...' : val;
+  }
+  return '';
+}
+
+/**
+ * Extract data layer variable path
+ * @param {Object} macro - Raw macro object
+ * @return {string} Data layer path (e.g., "ecommerce.items")
+ */
+function extractDataLayerPath_(macro) {
+  // For data layer variables (function: "__v")
+  if (macro.function === '__v' && macro.vtp_name) {
+    return macro.vtp_name;
+  }
+  
+  // For other variable types that access data layer
+  if (macro.vtp_dataLayerVariable) {
+    return macro.vtp_dataLayerVariable;
   }
   
   return '';
@@ -1203,6 +1381,9 @@ function writeGtmTable_(sheetName, headers, rows) {
     sheet.setFrozenRows(1);
   }
   
+  // Set green tab color for all GTM sheets
+  sheet.setTabColor('#34A853');
+  
   Logger.log(`Wrote ${rows.length} row(s) to ${sheetName}`);
 }
 
@@ -1298,6 +1479,9 @@ function createDebugSheet_(rawJs, containerId) {
   
   sheet.clearContents();
   
+  // Set green tab color
+  sheet.setTabColor('#34A853');
+  
   // Write debugging information
   const debugInfo = [
     ['GTM Container Debug Information', ''],
@@ -1365,15 +1549,16 @@ function exportGtmSummary() {
       return;
     }
     
-    // Create or clear summary sheet
-    let summarySheet = ss.getSheetByName('GTM_SUMMARY');
-    if (summarySheet) {
-      summarySheet.clear();
-    } else {
-      summarySheet = ss.insertSheet('GTM_SUMMARY');
-    }
-    
-    // Build the summary
+  // Create or clear summary sheet
+  let summarySheet = ss.getSheetByName('GTM_SUMMARY');
+  if (summarySheet) {
+    summarySheet.clear();
+  } else {
+    summarySheet = ss.insertSheet('GTM_SUMMARY');
+  }
+  
+  // Set green tab color
+  summarySheet.setTabColor('#34A853');    // Build the summary
     buildGtmSummarySheet_(summarySheet, containerId, tags, triggers, variables, vendors);
     
     // Activate the summary sheet
@@ -1481,6 +1666,175 @@ function buildGtmSummarySheet_(sheet, containerId, tags, triggers, variables, ve
   
   // Format the sheet
   formatGtmSummarySheet_(sheet);
+}
+
+/**
+ * Creates a preview sheet showing raw unparsed GTM data structures
+ * Shows the actual JavaScript object structure returned from the GTM container
+ */
+function createRawDataPreviewSheet_(rawData, containerId) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('GTM_RAW_DATA');
+  
+  if (!sheet) {
+    sheet = ss.insertSheet('GTM_RAW_DATA');
+  } else {
+    sheet.clear();
+  }
+  
+  // Set green tab color
+  sheet.setTabColor('#34A853');
+  
+  const data = [];
+  const previewCount = 5; // Show first 5 of each type
+  
+  // Header
+  data.push(['GTM RAW DATA - UNPARSED CONTAINER STRUCTURES', '']);
+  data.push([`Container ID: ${containerId}`, '']);
+  data.push([`Generated: ${new Date().toLocaleString()}`, '']);
+  data.push(['', '']);
+  data.push(['This shows the actual JavaScript object structure from the published GTM container.', '']);
+  data.push(['This is the raw data BEFORE parsing - what GTM returns when you fetch the container.', '']);
+  data.push(['', '']);
+  
+  // TAGS (raw)
+  data.push(['=== RAW TAGS ===', '']);
+  data.push([`Showing ${Math.min(previewCount, rawData.tags.length)} of ${rawData.tags.length} total tags`, '']);
+  data.push(['', '']);
+  
+  rawData.tags.slice(0, previewCount).forEach((tag, idx) => {
+    data.push([`RAW TAG #${idx}`, '']);
+    data.push(['Full JSON Structure:', '']);
+    const tagJson = JSON.stringify(tag, null, 2);
+    const lines = tagJson.split('\n');
+    lines.forEach(line => {
+      data.push([line, '']);
+    });
+    data.push(['', '']);
+  });
+  
+  data.push(['', '']);
+  
+  // PREDICATES (conditions used by triggers)
+  data.push(['=== RAW PREDICATES (Trigger Conditions) ===', '']);
+  data.push([`Showing ${Math.min(previewCount, rawData.predicates.length)} of ${rawData.predicates.length} total predicates`, '']);
+  data.push(['', '']);
+  
+  rawData.predicates.slice(0, previewCount).forEach((predicate, idx) => {
+    data.push([`RAW PREDICATE #${idx}`, '']);
+    data.push(['Full JSON Structure:', '']);
+    const predicateJson = JSON.stringify(predicate, null, 2);
+    const lines = predicateJson.split('\n');
+    lines.forEach(line => {
+      data.push([line, '']);
+    });
+    data.push(['', '']);
+  });
+  
+  data.push(['', '']);
+  
+  // RULES (trigger firing logic)
+  data.push(['=== RAW RULES (Trigger Logic) ===', '']);
+  data.push([`Showing ${Math.min(previewCount, rawData.rules.length)} of ${rawData.rules.length} total rules`, '']);
+  data.push(['Explanation: Rules define WHEN tags fire. Format: [["if",predicateIds],["add",tagIds],["unless",exceptionIds]]', '']);
+  data.push(['', '']);
+  
+  rawData.rules.slice(0, previewCount).forEach((rule, idx) => {
+    data.push([`RAW RULE #${idx}`, '']);
+    data.push(['Full JSON Structure:', '']);
+    const ruleJson = JSON.stringify(rule, null, 2);
+    const lines = ruleJson.split('\n');
+    lines.forEach(line => {
+      data.push([line, '']);
+    });
+    data.push(['', '']);
+  });
+  
+  data.push(['', '']);
+  
+  // MACROS (variables)
+  data.push(['=== RAW MACROS (Variables) ===', '']);
+  data.push([`Showing ${Math.min(previewCount, rawData.macros.length)} of ${rawData.macros.length} total macros`, '']);
+  data.push(['', '']);
+  
+  rawData.macros.slice(0, previewCount).forEach((macro, idx) => {
+    data.push([`RAW MACRO #${idx}`, '']);
+    data.push(['Full JSON Structure:', '']);
+    const macroJson = JSON.stringify(macro, null, 2);
+    const lines = macroJson.split('\n');
+    lines.forEach(line => {
+      data.push([line, '']);
+    });
+    data.push(['', '']);
+  });
+  
+  data.push(['', '']);
+  
+  // ENTITIES
+  data.push(['=== ENTITIES (Name Mappings) ===', '']);
+  data.push([`Total entities: ${Object.keys(rawData.entities).length}`, '']);
+  data.push(['Note: Entities provide name/metadata mappings. Often empty in published containers.', '']);
+  data.push(['', '']);
+  
+  const entityKeys = Object.keys(rawData.entities).slice(0, previewCount);
+  if (entityKeys.length > 0) {
+    entityKeys.forEach(key => {
+      data.push([`Entity Key: ${key}`, '']);
+      const entityJson = JSON.stringify(rawData.entities[key], null, 2);
+      const lines = entityJson.split('\n');
+      lines.forEach(line => {
+        data.push([line, '']);
+      });
+      data.push(['', '']);
+    });
+  } else {
+    data.push(['No entities found (common in published containers)', '']);
+    data.push(['', '']);
+  }
+  
+  // Write data
+  if (data.length > 0) {
+    sheet.getRange(1, 1, data.length, 2).setValues(data);
+  }
+  
+  // Format
+  sheet.getRange('A1:B1').merge()
+    .setFontSize(14)
+    .setFontWeight('bold')
+    .setBackground('#EA4335')
+    .setFontColor('#FFFFFF')
+    .setHorizontalAlignment('center');
+  
+  sheet.setColumnWidth(1, 800);
+  sheet.setColumnWidth(2, 100);
+  
+  // Make section headers stand out
+  for (let i = 1; i <= data.length; i++) {
+    const cellValue = sheet.getRange(i, 1).getValue();
+    if (typeof cellValue === 'string' && cellValue.startsWith('===')) {
+      sheet.getRange(i, 1, 1, 2).merge()
+        .setFontSize(12)
+        .setFontWeight('bold')
+        .setBackground('#FCE8E6')
+        .setFontColor('#C5221F');
+    }
+    // Individual item headers (RAW TAG #0, etc.)
+    if (typeof cellValue === 'string' && 
+        (cellValue.startsWith('RAW TAG #') || cellValue.startsWith('RAW PREDICATE #') || 
+         cellValue.startsWith('RAW RULE #') || cellValue.startsWith('RAW MACRO #'))) {
+      sheet.getRange(i, 1, 1, 2).merge()
+        .setFontWeight('bold')
+        .setBackground('#F1F3F4');
+    }
+    // JSON structure lines
+    if (typeof cellValue === 'string' && 
+        (cellValue.trim().startsWith('{') || cellValue.trim().startsWith('[') || 
+         cellValue.includes('"function"') || cellValue.includes('"vtp_'))) {
+      sheet.getRange(i, 1).setFontFamily('Courier New').setFontSize(9);
+    }
+  }
+  
+  Logger.log('Created GTM_RAW_DATA preview sheet');
 }
 
 /**

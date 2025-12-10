@@ -1,0 +1,181 @@
+Trigger ID,Name,Type,Event Name,Conditions (flattened),Used By Tags,Folder,Violations
+11,GA4 - Ninja - begin_checkout,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,"Horizon - Facebook - Ninja - Initiate Checkout, Horizon - Snapchat - Ninja - Checkout, Horizon - TikTok - Ninja - Start Checkout",GA4,
+17,GA4 - view_item,CUSTOM_EVENT,,,"Horizon Connect - Event - Product Pages, cHTML - Clinch - ViewContent (PDP), cHTML - Bazaar Voice - Conversion - View Item, Amazon - Fire Rotator - View Item, ContentSquare - Dynamic Ecomm Variable, cHTML - Amazon Fire TV Rotator - View Item",GA4,
+19,Custom - page_view_delayed,CUSTOM_EVENT,,,"Horizon - Facebook - Shark - Page View, Horizon - Bing - Ninja - UET, Horizon (HX) - Ninja - Trade Desk - Universal Pixel, Horizon - DCM - Shark - All Pages Standard, Horizon - LiveRamp, Horizon - Reddit - Ninja - Pageview, Horizon - Facebook - Ninja - Pageview, Horizon - Pinterest - Shark - Base Tag, Horizon Connect - All Pages Standard, Trade Desk - Universal Pixel - Shark - (HX-Horizon), Horizon - Snapchat - Shark - Page View, Horizon - TikTok - Shark - Base Code, cHTML - Trade Desk Universal (Carat), Horizon - Amazon - Shark - PageView, cHTML - Clinch - Pixel, Horizon - Bing - Shark - UET, Horizon - Pinterest - Ninja - Base Tag, Horizon - TikTok - Ninja - Base Code, Horizon - Snapchat - Ninja - PageView, Google Tag Global MCC (PMG), Facebook - Shark - Page View, Horizon - Facebook - Shark - Base Pixel, Horizon - Facebook - Ninja - Base Pixel, Google Ads - Shark MCC - All Pages (PMG), Google - Conversion Linker, DCM - Global Tag (PMG), Google Tag AW-975129129 (PMG), DCM - All Pages Standard (PMG), Horizon - DCM - Shark - All Pages Unique, cHTML - Attentive - Global script, cHTML - Beampix PageView, DCM - All Pages Unique (PMG), Horizon - Reddit - Shark - Pageview, cHTML - Criteo Sitewide Tag, cHTML - tvScientific - Universal Pixel, Horizon - DCM - Ninja - All Pages Unique, Google Tag AW-806708453, Horizon - Amazon - Ninja - PageView, Horizon - DCM - Ninja - All Pages Standard, Horizon - Snapchat - Ninja - Pixel",GDPR Cookie Consent Notification,
+20,Trigger - page_view_delayed and view item,TRIGGER_GROUP,,,cHTML - Extole - Drop a hint,,No Conditions
+26,GA4 - purchase,CUSTOM_EVENT,,,"ContentSquare - Ecommerce, Horizon - Amazon - Purchase Minus Beauty, cHTML - Beampix - Purchase, Google Ads - Purchase - Conversion (PMG), Google Ads - Shark MCC - Conversion (PMG), cHTML - Impact - Purchase, cHTML - Clinch - Purchase, cHTML - Bazaar Voice - Shark - Transaction, PURCHASE EVENT TEST, cHTML - tvScientific - purchase, MiQ - Purchase, cHTML - Set Transaction Cookie, cHTML - test purchase, Horizon Connect - Event - Purchase, cHTML - Bazaar Voice - Shark - Transaction (UAT), cHTML - Extole - Conversion, cHTML - Criteo Conversion Tag, cHTML - Zoovu - Base code and conversion, Amazon - Off-Amazon-Purchase, Google Ads - Ninja Cross-Account Conversion Tracking - Conversion (PMG), cHTML - Trade Desk - Purchase (Carat), cHTML Amazon Fire TV Rotator - Purchase/AddToCart, GA4 - Ecommerce - purchase, Upsellit Confirmation Tag, Horizon - SharkNinja - Purchase Confirmation",Ecommerce,
+31,GA4 - add_shipping_info,CUSTOM_EVENT,,,"cHTML - Clinch - Initiate Checkout, cJS - Guest Checkout - Capture Name, Email, and Phone Number, ContentSquare - Artificial Pageview, GA4 - Ecommerce - add_shipping_info",GA4,
+40,GA4 - Shark - add_to_cart,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,"Horizon - Facebook - Shark - Add to Cart, Horizon - TikTok - Shark - Add to cart, DCM - Shark - Add To Cart (PMG), Horizon - Pinterest - Shark - Add To Cart, Horizon - DCM - Shark - Add To Cart, Horizon - Reddit - Shark - Add To Cart, Horizon - Amazon - Shark - Add to Cart, Horizon - Snapchat - Shark - Add To Cart, Trade Desk - Add to Cart - Shark - (HX-Horizon)",GA4,
+47,GA4 - view_item_list,CUSTOM_EVENT,,,GA4 - Ecommerce - view_item_list,GA4,
+48,Trigger - Onetrustloaded and view item list,TRIGGER_GROUP,,,,,Unused Trigger | No Conditions
+53,cEvent - page_view - checkout placeOrder - Ninja,CUSTOM_EVENT,,{{cJS - data-checkout-stage}} EQUALS placeOrder AND {{cJS - eCommerce - hasNinjaProducts}} EQUALS true,Horizon - Amazon - Ninja - Review Order,,
+59,cEvent - first_pageload,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+62,cEvent - form_submit - Black Friday,CUSTOM_EVENT,,{{Page URL}} CONTAINS /black-friday,"GA4 - Event - email_signup, GA4 - SS - Send Events",,
+64,cEvent page_load,CUSTOM_EVENT,,,"cHTML - page_view_delayed, cHTML - Impact - Universal Pixel, cHTML - Impact - Identify, GA4 - page_view, GA4 - SS Configuration, Amazon - Page View, ContentSquare Main Tag, Ads - Configuration, cHTML Amazon Fire TV Rotator - PageView, GA4 - Configuration, Amazon - Fire Rotator - Page View, Upsellit Global Footer Tag",,
+65,cEvent - Group - page_load & purchase,TRIGGER_GROUP,,,"cHTML - Extole - AutoPop - new cart, Rokt - purchase, cHTML - SS purchase",,No Conditions
+70,GA4 - Shark - begin_checkout,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,"Horizon - Amazon - Shark - Checkout, Horizon - Snapchat - Shark - Checkout, Horizon - Facebook - Shark - Initiate Checkout, Horizon - TikTok - Shark - Start Checkout",GA4,
+73,GA4 - view_cart,CUSTOM_EVENT,,{{Page Path}} CONTAINS cart,"cHTML - Clinch - View Cart, cHTML - Criteo View Cart",GA4,
+78,Ninja Products - page_view_delayed,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,"Horizon - Google Ads - Ninja - Page View Remarketing, Horizon - Pinterest - Ninja - Pageview",,
+80,Checkout URL - page_view_delayed,CUSTOM_EVENT,,{{Page URL}} CONTAINS checkout,,,Unused Trigger
+82,Ecommerce Ninja Products - page_view_delayed,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,,,Unused Trigger
+83,Order Confirm URL - page_view_delayed,CUSTOM_EVENT,,{{Page URL}} CONTAINS order-confirm,,,Unused Trigger
+85,cEvent - Site Search,CUSTOM_EVENT,,{{Page URL}} CONTAINS search?q,"Trade Desk - ViewSearch - (HX - Horizon), Horizon (HX) - Ninja - Trade Desk - ViewSearch, Amazon - Site Search, GA4 - Event - view_search_results, cHTML - Clinch - Search Results Page",,
+90,cEvent - Group - page_load & Shark begin_checkout,TRIGGER_GROUP,,,"Horizon - DCM - Shark - Checkout, DCM - Shark - Checkout (PMG), Horizon - Amazon - Shark - Checkout",,No Conditions
+94,cEvent - notify_me,CUSTOM_EVENT,,,"cHTML - Trade Desk - Notify Me (Carat), Trade Desk - Waitlist - (HX-Horizon), Horizon - Snapchat - Ninja - Waitlist, Horizon - TikTok - Ninja - Waitlist, cHTML - NotifyMe - Capture Field Values, Facebook - Shark - Complete Registration, Horizon (HX) - Ninja - Trade Desk - Waitlist, Horizon - TikTok - Waitlist, DCM - Waitlist (PMG), Horizon - DCM - Shark - Waitlist, cJS - NotifyMe - Capture Email, GA4 - Event - notify_me, Horizon - Facebook - Ninja - SignUp, Horizon - Snapchat - Shark - Waitlist, Horizon - Facebook - Shark - SignUp, Horizon - Facebook - Ninja - Complete Registration, Horizon - DCM - Ninja - Waitlist",,
+95,Custom - page_view_delayed - PV - Homepage,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS Home,"Horizon - ArtsAI - Homepage, Horizon - DCM - Ninja - Homepage - Unique, Horizon - DCM - Shark - Homepage - Unique, Horizon - DCM - Shark - Homepage - Standard, DCM - Shark - Homepage - Unique (PMG), Horizon - DCM - Ninja - Homepage - Standard, DCM - Shark - Homepage - Standard (PMG), Horizon - SharkNinja - Homepage - Standard, Horizon - SharkNinja - Homepage - Unique",GDPR Cookie Consent Notification,
+100,Shark Products - cEvent - Group - page_load + view_item,TRIGGER_GROUP,,{{cJS - view_item dataLayer - hasSharkProducts}} EQUALS true,"Horizon - Amazon - Shark - View Item, Horizon - Pinterest - Shark - Product Page, Horizon - DCM - Shark - Product Pages - Standard, DCM - Shark - View Product Page (PMG)",,
+105,yieldify_close,CUSTOM_EVENT,,,,,Unused Trigger
+107,Shark Products - page_view_delayed,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,"Horizon - Google Ads - Shark - Page View Remarketing, Horizon - Pinterest - Shark - Page Visit",,
+108,Ecommerce Shark Products - page_view_delayed,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,,,Unused Trigger
+111,BLOCK - Do Not Fire on Test and UAT excl www6,CUSTOM_EVENT,,{{Page Hostname}} REGEX ^(m\.)?(test|prod|uat).*,,,Unused Trigger
+114,GA4 - Ninja - add_to_cart,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,"Horizon - Snapchat - Ninja - Add To Cart, Horizon - TikTok - Ninja - Add to cart, Horizon - Facebook - Ninja - Add to Cart, Horizon - Pinterest - Ninja - Add To Cart, Horizon (HX) - Ninja - Trade Desk - Add to Cart, Horizon - Amazon - Ninja - Add to Cart, Horizon - DCM - Ninja - Add To Cart, Horizon - Reddit - Ninja - Add To Cart",GA4,
+117,GA4 - navigation_click,CUSTOM_EVENT,,,GA4 - Event - navigation_click,,
+119,Block - Do Not Fire on Support pages,CUSTOM_EVENT,,{{Page Hostname}} CONTAINS support.sharkninja.com,"Horizon - Pinterest - Shark - Base Tag - Check Order, GA4 - Event - notify_me Helper",,
+123,Country Selector Interaction,CLICK,,{{Click Classes}} REGEX dropdown-flag-menu|countryNames|country-selector-button,GA4 - Event - country_selector_interaction,,
+127,cEvent - NotifyMe Form Submission,FORM_SUBMISSION,,{{Form Classes}} CONTAINS notifyme-form,cHTML - Email Capture - Waitlist Form Submit,,
+133,GA4 - Shark - purchase,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,"Trade Desk - Purchase - Shark - (HX-Horizon), Horizon - Kerv - Shark - Purchase, Horizon - Amazon - Shark - Purchase, Horizon - TikTok - Shark - Purchase, Horizon - Snapchat - Shark - Purchase, Horizon - Pinterest - Shark - Purchase, Google Ads - Shark - Conversion, Horizon - Amazon - Beauty Purchase, Horizon - Facebook - Shark - Purchase, Google Ads - Shark Conversion - Conversion (PMG), Horizon - ArtsAI - Shark - Purchase, Horizon - Bing - Shark - Purchase, Horizon - Reddit - Shark - Purchase, Horizon - Google Ads - Shark - Conversion",Ecommerce,
+134,cEvent - Group - page_load & Shark purchase,TRIGGER_GROUP,,,"Horizon - DCM - Shark - Purchase, DCM - Shark - Purchase (PMG)",,No Conditions
+138,cEvent - Quick Filters Visibility,ELEMENT_VISIBILITY,,,cHTML - Shark - Quick Filters Helper,,No Conditions
+139,GA4 - purchase Only OO101B,CUSTOM_EVENT,,{{GA4 - Ecommerce - 1st item - item_id}} CONTAINS OO101B,,,Unused Trigger
+152,Custom - page_view_delayed - Ninja Frostvault 30qt Hard Cooler w Dry Zone,CUSTOM_EVENT,,{{Page Path}} CONTAINS frostvault,cHTML - Horizon - Kerv Landing Pages,,
+153,GA4 - add_to_cart,CUSTOM_EVENT,,,"cHTML - Beampix - add_to_cart, cHTML - tvScientific - add_to_cart, cHTML - Clinch - Add to Cart, Amazon - Add To Cart, GA4 - Ecommerce - add_to_cart, Horizon Connect - Event - Add to Cart, cHTML - Trade Desk - Add To Cart (Carat), cHTML Amazon Fire TV Rotator - Purchase/AddToCart",GA4,
+157,Custom - page_view_delayed - Ninja Thirsti 18oz Travel Bottle,CUSTOM_EVENT,,{{Page Path}} CONTAINS thirsti,cHTML - Horizon - Kerv Landing Pages,,
+162,Custom - page_view_delayed - FlexBreeze Fans,CUSTOM_EVENT,,{{Page Path}} CONTAINS shark-flexbreeze,Horizon - ArtsAI - FlexBreeze Fan,,
+163,Custom - page_view_delayed - Fans Home Page,CUSTOM_EVENT,,{{Page Path}} EQUALS /home-cleaning/air-cleaning-cooling-heating/fans-heaters,Horizon - ArtsAI - Fans,,
+165,GA4 - begin_checkout,CUSTOM_EVENT,,,"cHTML - Clinch - Initiate Checkout, cHTML - tvScientific - begin_checkout, cHTML - Trade Desk - Checkout (Carat), ContentSquare - Artificial Pageview, Amazon - Begin Checkout, GA4 - Ecommerce - begin_checkout",GA4,
+166,GA4 - add_payment_info,CUSTOM_EVENT,,,"cHTML - Clinch - Initiate Checkout, cHTML - capture paymentType helper, GA4 - Ecommerce - add_payment_info, ContentSquare - Artificial Pageview",GA4,
+173,DY Variation Impression,CUSTOM_EVENT,,,GA4 - Event - Dynamic Yield,,
+175,cEvent - page_view - checkout placeOrder - Shark,CUSTOM_EVENT,,{{cJS - data-checkout-stage}} EQUALS placeOrder AND {{cJS - eCommerce - hasSharkProducts}} EQUALS true,Horizon - Amazon - Shark - Review Order,,
+178,cEvent - register_product,CUSTOM_EVENT,,,GA4 - Event - register_product,,
+179,cEvent - Registration Successful,ELEMENT_VISIBILITY,,,GA4 - Event - register_product,,No Conditions
+182,GA4 - Ninja - purchase,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,"Horizon - Reddit - Ninja - Purchase, Horizon - Snapchat - Ninja - Purchase, Horizon - Facebook - Ninja - Purchase, Horizon (HX) - Ninja - Trade Desk - Purchase, Horizon - Bing - Ninja - Purchase, Horizon - Google Ads - Ninja - Conversion, Horizon - ArtsAI - Ninja - Purchase, Horizon - Amazon - Ninja - Purchase, Horizon - TikTok - Ninja - Purchase, Horizon - Pinterest - Ninja - Purchase",Ecommerce,
+185,cEvent - removeCookie,CUSTOM_EVENT,,,,LunaMetrics Cookie Management Plugin,Unused Trigger
+190,cEvent - payment_failure,CUSTOM_EVENT,,,GA4 - Event - payment_failure,,
+194,GA4 - compare_model,CUSTOM_EVENT,,,GA4 - Event - compare_model,,
+196,cEvent - filterClick,CUSTOM_EVENT,,,GA4 - Event - filter_click,,
+197,GA4 - Shark - add_payment_info,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,Horizon - Facebook - Shark - AddPaymentInfo,,
+201,Window - Email Signup - Overlay,WINDOW_LOADED,,{{cJS - Email Signup Overlay}} EQUALS block,,Google Analytics,Unused Trigger
+208,cEvent - Popup Visibility,ELEMENT_VISIBILITY,,,cHTML - Capture Popup Contents,,No Conditions
+211,BLOCK - Fire on Test and UAT Only,CUSTOM_EVENT,,{{Page Hostname}} REGEX ^(m\.)?(test|uat|prod).*,,,Unused Trigger
+214,cEvent - time_on_site_reached,CUSTOM_EVENT,,,GA4 - Event - time_on_site_60,,
+216,Shark Products - view_item,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,"Horizon - Reddit - Shark - View Item, Horizon - Snapchat - Shark - View Content, Horizon - TikTok - Shark - Product Detail, Horizon - Facebook - Shark - ViewContent, Trade Desk - Product Pages - Shark - (HX-Horizon)",,
+219,cEvent - formSubmit - Email Signup,CUSTOM_EVENT,,{{DLV - Email Subscription Form}} CONTAINS success AND {{DLV - Email Subscription Form}} CONTAINS pref-center,"Horizon - Facebook - Ninja - SignUp, Horizon - Facebook - Ninja - Complete Registration",,
+222,cEvent - email_signup,CUSTOM_EVENT,,{{DLV - popup_action}} CONTAINS x AND {{DLV - popup_action}} CONTAINS no thanks,"cJS - Email Signup - Capture Email, Horizon - DCM - Shark - Email, cHTML - Trade Desk - Email Signup (Carat), Facebook - Shark - Complete Registration, GA4 - Event - email_signup, Horizon - TikTok - Ninja - email Signup, DCM - Shark - Email (PMG), Amazon - Signup, Trade Desk - Email Sign Up - (HX-Horizon), Horizon (HX) - Ninja - Trade Desk - Email Sign Up, Horizon - Snapchat - Ninja - email Signup, Horizon - Facebook - Ninja - SignUp, Horizon - DCM - Ninja - Email, Horizon - Facebook - Shark - SignUp, Horizon - TikTok - email Signup, Horizon - Facebook - Ninja - Complete Registration, Horizon - Snapchat - Shark - email Signup, GA4 - SS - Send Events",,
+225,GA4 - select_item,CUSTOM_EVENT,,,GA4 - Ecommerce - select_item,GA4,
+234,cevent - coreWebVitals,CUSTOM_EVENT,,,,,Unused Trigger
+245,BLOCK - Do Not Fire on Test and UAT,CUSTOM_EVENT,,{{Page Hostname}} REGEX ^(m\.)?(test|prod|uat|www6).*,,,Unused Trigger
+247,5 Second Delay Timer,TIMER,,,,,Unused Trigger | No Conditions
+257,Scroll Depth,SCROLL_DEPTH,,,,,Unused Trigger | No Conditions
+259,Page View - DOM Ready,DOM_READY,,,cHTML - Shark - Video Event Helper,,No Conditions
+263,Ninja Products - view_item,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,"Horizon - TikTok - Ninja - Product Detail, Horizon - Reddit - Ninja - View Content, Horizon - Facebook - Ninja - ViewContent, Horizon - Snapchat - Ninja - View Content, Horizon (HX) - Ninja - Trade Desk - Product Pages",,
+270,GA4 - PDP view_item,CUSTOM_EVENT,,{{DLV - item view_type}} EQUALS PDP,,GA4,Unused Trigger
+273,Custom - page_view_delayed + OO101B,CUSTOM_EVENT,,{{Page URL}} CONTAINS OO101B,,,Unused Trigger
+274,GA4 - Ninja - add_payment_info,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,,,Unused Trigger
+278,GA4 - Shark - remove_from_cart,CUSTOM_EVENT,,{{cJS - eCommerce - hasSharkProducts}} EQUALS true,,GA4,Unused Trigger
+282,Support Pages Only,CUSTOM_EVENT,,{{Page URL}} CONTAINS support.sharkninja.com,GA4 - Configuration - Support Sub-Domain,,
+288,Trigger - Onetrustloaded and view item,TRIGGER_GROUP,,,,,Unused Trigger | No Conditions
+290,Custom - page_view_delayed - CryoGlow Red Blue Infared,CUSTOM_EVENT,,{{Page Path}} CONTAINS /shark-cryoglow-red-blue-infrared-iqled-face-mask-under-eye-cooling,Horizon - ArtsAI - CryoGlow Red Blue Infared,,
+291,Custom - page_view_delayed - CryoGlow Red Blue Infared - Category Page,CUSTOM_EVENT,,{{Page Path}} CONTAINS /beauty/skincare/led-face-masks,,,Unused Trigger
+293,Custom - page_view_delayed - Beauty Skincare Page,CUSTOM_EVENT,,{{Page Path}} CONTAINS /beauty/skincare,Horizon - ArtsAI - Beauty Skincare,,
+302,cEvent - initialization_delayed,CUSTOM_EVENT,,,"cHTML - Extole Framework, cHTML - Shark - Payment Failure Listener",,
+306,Page View - Window Loaded,WINDOW_LOADED,,,,,Unused Trigger | No Conditions
+311,Container Loaded,INIT,,,,,Unused Trigger | No Conditions
+317,Custom - page_view_delayed - Prod,CUSTOM_EVENT,,{{Page URL}} STARTS_WITH https://www.sharkninja.com,cHTML - Verint - Production,GDPR Cookie Consent Notification,
+320,Pv- Products,CUSTOM_EVENT,,{{Page URL}} CONTAINS /products/,,,Unused Trigger
+324,GA4 - remove_from_cart,CUSTOM_EVENT,,,"GA4 - Ecommerce - remove_from_cart, cHTML - Clinch - Remove From Cart",GA4,
+326,cEvent - Group - page_load & Ninja begin_checkout,TRIGGER_GROUP,,,"Horizon - DCM - Ninja - Checkout, Horizon - Amazon - Ninja - Checkout",,No Conditions
+327,Custom - first_pageload - Category,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS Category,,,Unused Trigger
+334,cEvent - Group - page_load & view_item_list,TRIGGER_GROUP,,,cHTML - SS view_item_list,,No Conditions
+338,cEvent - coupon_apply,CUSTOM_EVENT,,,GA4 - Promo Code Apply,,
+339,cEvent - video_progress,CUSTOM_EVENT,,,GA4 - Event - video_progress,,
+354,cEvent - Group - page_load & page_view_delayed,TRIGGER_GROUP,,,cHTML - SS page_view_delayed,,No Conditions
+356,Custom - page_view_delayed - Face Masks Page,CUSTOM_EVENT,,{{Page Path}} EQUALS /beauty/skincare/led-face-masks,Horizon - ArtsAI - Face Masks,,
+363,Custom - page_view_delayed - Order-Status,CUSTOM_EVENT,,{{Page URL}} CONTAINS /order-status,cHTML - Sprinkler Chat,GDPR Cookie Consent Notification,
+365,cEvent - page_view - Shark Home Pages Only,CUSTOM_EVENT,,{{Regex - Beauty/Home}} CONTAINS Home,,,Unused Trigger
+366,Custom - page_view - New Account Registration,CUSTOM_EVENT,,{{Page URL}} CONTAINS /account?registration=submitted,"Horizon (HX) - Ninja - Trade Desk - New Account, GA4 - Event - new_account",,
+377,cEvent - formSubmit - My Account - Preference Center,CUSTOM_EVENT,,{{DLV - Email Subscription Form}} CONTAINS pref-center AND {{DLV - Email Subscription Form}} REGEX (success|unsubscribe),,,Unused Trigger
+378,cEvent - video,CUSTOM_EVENT,,,,,Unused Trigger
+381,Checkout - Ninja Brand,CUSTOM_EVENT,,{{cJS - Item Brands}} CONTAINS Ninja,TikTok - Ninja - Start Checkout,,
+384,cEvent - video_in_viewport,CUSTOM_EVENT,,,GA4 - Event - video_in_viewport,,
+394,cEvent - page_view_delayed - Category,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS Category,cHTML - Clinch - Category Page,,
+401,DLV - quick_filter_click,CUSTOM_EVENT,,,GA4 - Event - Quick Filter Click,,
+411,Click - Outbound,LINK_CLICK,,{{Click URL}} CONTAINS sharkninja.com AND {{Click URL}} STARTS_WITH http,GA4 - Event - outbound_clicks,,
+413,yieldify_impression,CUSTOM_EVENT,,,,,Unused Trigger
+415,cEvent - cartproxyTimers,CUSTOM_EVENT,,{{Event}} EQUALS cartproxyTimers,,Cartproxy Testing,Unused Trigger
+431,Custom - first_pageload - Registration Confirmation,CUSTOM_EVENT,,{{Page URL}} CONTAINS /register/product-registration-confirmation,,,Unused Trigger
+432,Custom - first_pageload - PV - Homepage,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS Home,,,Unused Trigger
+434,cEvent - Find Parts - Quick Filter Visibility,ELEMENT_VISIBILITY,,{{Page Path}} CONTAINS /parts-support,cHTML - Shark - Find Parts Quick Filter Click Helper,,
+436,GA4 - user_login,CUSTOM_EVENT,,,GA4 - Event - user_login,,
+437,cEvent - products_in_view,CUSTOM_EVENT,,,GA4 - Event - products_in_view,,
+447,cEvent - click - country-list a,LINK_CLICK,,{{Click Element}} CSS_SELECTOR .country-list .continent a,GA4 - Event - country_selector_interaction,,
+456,Ninja Products - cEvent - Group - page_load + view_item,TRIGGER_GROUP,,{{cJS - view_item dataLayer - hasNinjaProducts}} EQUALS true,"Horizon - Amazon - Ninja - View Item, Horizon - Pinterest - Ninja - Product Page, Horizon - DCM - Ninja - View Product Page",,
+458,5 Second Delay Timer (DUP),TIMER,,,,,Unused Trigger | No Conditions
+459,5 Second Delay (DUP),TRIGGER_GROUP,,,,,Unused Trigger | No Conditions
+460,cEvent - ALL - Test/Staging/UAT Pages,CUSTOM_EVENT,,{{Page Hostname}} REGEX test|staging|uat|prod,,,Unused Trigger
+461,GA4 - Ninja - remove_from_cart,CUSTOM_EVENT,,{{cJS - eCommerce - hasNinjaProducts}} EQUALS true,,GA4,Unused Trigger
+462,cEvent - Group - page_load & Ninja purchase,TRIGGER_GROUP,,,Horizon - DCM - Ninja - Purchase,,No Conditions
+467,yieldify_click,CUSTOM_EVENT,,,,,Unused Trigger
+470,Custom - page_view_delayed - Ninja Thirsti 24 oz Travel Bottle,CUSTOM_EVENT,,{{Page Path}} CONTAINS /products/ninja-thirsti-24oz.-travel-bottle,cHTML - Horizon - Kerv Landing Pages,,
+471,Custom - page_view_delayed - Ninja Woodfire Pro Connect XL Outdoor Grill Smoker,CUSTOM_EVENT,,{{Page Path}} CONTAINS /products/ninja-woodfire-pro-connect-xl-outdoor-grill-smoker,cHTML - Horizon - Kerv Landing Pages,,
+472,Custom - page_view_delayed - Ninja Woodfire 8 in 1 Outdoor Oven,CUSTOM_EVENT,,{{Page Path}} CONTAINS woodfire,cHTML - Horizon - Kerv Landing Pages,,
+473,Custom - page_view_delayed - Ninja Woodfire Outdoor Grill,CUSTOM_EVENT,,{{Page Path}} CONTAINS /products/ninja-woodfire-outdoor-grill,cHTML - Horizon - Kerv Landing Pages,,
+474,Custom - page_view_delayed - Ninja Blast Portable Blender,CUSTOM_EVENT,,{{Page Path}} CONTAINS portable-blender,cHTML - Horizon - Kerv Landing Pages,,
+480,Click - Review Order,CLICK,,{{Click Text}} CONTAINS Review Order,,,Unused Trigger
+487,GA4 - add_to_cart - Exclude Accessories,CUSTOM_EVENT,,{{GA4 - Ecommerce - item_category}} CONTAINS Accessories,cHTML - Bazaar Voice - Conversion - Add To Cart,,
+495,Custom - page_view_delayed - Category Ref Skincare,CUSTOM_EVENT,,{{Page Path}} CONTAINS /categoryref/skincare,Horizon - ArtsAI - Beauty Skincare,,
+501,Custom - first_pageload Order Status,CUSTOM_EVENT,,{{Page URL}} CONTAINS /order-status,,,Unused Trigger
+503,cEvent - Group - page_load & view_item,TRIGGER_GROUP,,,"GA4 - Ecommerce - view_item, cHTML - SS view_item",,No Conditions
+506,Click - btn,CUSTOM_EVENT,,,GA4 - Event - ctas,,
+516,cEvent - module_questions,CUSTOM_EVENT,,,,,Unused Trigger
+517,Custom first_pageload - PDP pages only,CUSTOM_EVENT,,{{Page URL}} REGEX \/products\/|zid,,,Unused Trigger
+529,cEvent - popup - generic,CUSTOM_EVENT,,{{DLV - popup_action}} CONTAINS signup,GA4 - Event - popup,,
+531,cEvent - ALL -Live Pages,CUSTOM_EVENT,,{{Page Hostname}} REGEX test|sfcctest|staging|uat|prod,,,Unused Trigger
+532,cEvent - Video in viewport,ELEMENT_VISIBILITY,,,cHTML - Video Tracking,,No Conditions
+535,cEvent - OneTrustLoaded - Category pages,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS Category,,,Unused Trigger
+536,yieldify_form_submit,CUSTOM_EVENT,,,,,Unused Trigger
+539,cEvent - riskified_advise_check,CUSTOM_EVENT,,,GA4 - Event - riskified_advise_check,,
+547,cEvent - page_view - Shark Beauty Pages Only,CUSTOM_EVENT,,{{Regex - Beauty/Home}} CONTAINS Home,,,Unused Trigger
+551,BLOCK - Fire on www6 only,CUSTOM_EVENT,,{{Page Hostname}} REGEX ^(m\.)?(www6).*,,,Unused Trigger
+552,cEvent - Group - page_load & add_to_cart,TRIGGER_GROUP,,,cHTML - SS add_to_cart,,No Conditions
+554,cEvent - email_sign_up_submit,CUSTOM_EVENT,,,,,Unused Trigger
+564,cEvent- cartproxyMessage,CUSTOM_EVENT,,{{Event}} EQUALS cartproxyMessage,,Cartproxy Testing,Unused Trigger
+566,Custom - page_view_delayed - UAT,CUSTOM_EVENT,,{{Page Hostname}} REGEX (.*)sfcc(stage|test)(.*),cHTML - Verint - UAT,GDPR Cookie Consent Notification,
+573,cEvent - Group - page_load & begin_checkout,TRIGGER_GROUP,,,cHTML - SS begin_checkout,,No Conditions
+575,5 Second Delay,TRIGGER_GROUP,,,,,Unused Trigger | No Conditions
+583,Element Vis - HandyBuddy Modal,ELEMENT_VISIBILITY,,,GA4 - Event - HandyBuddy Modal,,No Conditions
+586,cEvent - Block - Main Site,CUSTOM_EVENT,,{{Page URL}} CONTAINS sharkninja.com,,,Unused Trigger
+603,Custom - page_view - Registration Confirmation,CUSTOM_EVENT,,{{Page URL}} CONTAINS /register/product-registration-confirmation,,GDPR Cookie Consent Notification,Unused Trigger
+606,Custom - page_view All PDP pages,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS Product Page,,,Unused Trigger
+613,Custom page_view_delayed - PDP pages only,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS pdp,,,Unused Trigger
+629,cEvent - UA DL Tags,CUSTOM_EVENT,,,,,Unused Trigger
+633,Custom - page_view_delayed - Ninja Frostvault 50qt Hard Cooler w Dry Zone,CUSTOM_EVENT,,{{Page Path}} CONTAINS /products/ninja-frostvault-50qt-hard-cooler-with-dry-zone,,,Unused Trigger
+639,cEvent - video_action,CUSTOM_EVENT,,,GA4 - Event - video,,
+642,cEvent - Group - page_load & add_payment_info,TRIGGER_GROUP,,,cHTML - SS add_payment_info,,No Conditions
+646,Click - Product Filters,CLICK,,{{Click Classes}} CONTAINS filter-refinement-button,cHTML - Shark - Filter Click Helper,,
+650,cEvent - refer_friend,CUSTOM_EVENT,,,,,Unused Trigger
+651,Custom - first_pageload + OO zidOO101RAW,CUSTOM_EVENT,,{{Page Path}} CONTAINS ninja-woodfire-8-in-1-outdoor-oven-zidOO101RAW,,,Unused Trigger
+655,Custom - page_view (DUP),CUSTOM_EVENT,,,,GDPR Cookie Consent Notification,Unused Trigger
+659,Scroll,SCROLL_DEPTH,,,GA4 - Event - scroll,,No Conditions
+667,cEvent - Group - page_load & notify_me,TRIGGER_GROUP,,,cHTML - SS notify_me,,No Conditions
+679,Custom - first_pageload - Order-Status,CUSTOM_EVENT,,{{Page URL}} CONTAINS /order-status,,GDPR Cookie Consent Notification,Unused Trigger
+697,cEvent - BazaarVoice bvsc,CUSTOM_EVENT,,,,,Unused Trigger
+699,cEvent - email_sign_up_preferences,CUSTOM_EVENT,,,,,Unused Trigger
+705,Custom - first_pageload - New Account Registration,CUSTOM_EVENT,,{{Page URL}} CONTAINS /register/account-registration-confirmation,,,Unused Trigger
+709,cEvent - feedback,CUSTOM_EVENT,,,,,Unused Trigger
+711,Checkout - Shark Brand,CUSTOM_EVENT,,{{cJS - Item Brands}} CONTAINS Shark,TikTok - Shark - Start Checkout,,
+716,cEvent - drop_a_hint_submit,CUSTOM_EVENT,,,,,Unused Trigger
+720,Initialization - order status,INIT,,{{Page Path}} CONTAINS /order-status,,,Unused Trigger
+726,Custom - first_pageload All PDP pages,CUSTOM_EVENT,,{{GA4 - page_type}} EQUALS Product Page,,,Unused Trigger
+741,cEvent - drop_a_hint_open,CUSTOM_EVENT,,,,,Unused Trigger
+742,cEvent - SS Events,CUSTOM_EVENT,,{{Event}} REGEX first_pageload|page_view|view_item_list|view_item|add_to_cart|begin_checkout|add_payment_info|purchase,,,Unused Trigger
+770,cEvent - setCookie,CUSTOM_EVENT,,,,LunaMetrics Cookie Management Plugin,Unused Trigger
+771,Trigger Group - view_cart & page_load,TRIGGER_GROUP,,,GA4 - Ecommerce - view_cart,,No Conditions
+788,Custom - page_view_delayed - Sales Offers,CUSTOM_EVENT,,{{Page Path}} CONTAINS /sales-offers,Horizon - SharkNinja - Total Promo - Unique,,
+798,cEvent - add_payment_info_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+799,cEvent - add_to_cart_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+800,cEvent - begin_checkout_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+801,cEvent - notify_me_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+802,cEvent - page_view_delayed_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+803,cEvent - purchase_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+804,cEvent - view_item_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,
+805,cEvent - view_item_list_ss,CUSTOM_EVENT,,,GA4 - SS - Send Events,,

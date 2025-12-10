@@ -35,6 +35,7 @@ function onOpen() {
     .addItem('Inspect Container', 'inspectGtmContainer')
     .addSeparator()
     .addItem('📊 Export Summary Report', 'exportGtmSummary')
+    .addItem('🏥 Generate Health Analysis', 'generateTagstackAnalysis')
     .addSeparator()
     .addItem('Clear Output Sheets', 'clearGtmOutputSheets')
     .addItem('🗑️ Delete All Except Essentials', 'deleteAllExceptEssentials')

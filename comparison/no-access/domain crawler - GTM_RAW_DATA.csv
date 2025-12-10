@@ -1,0 +1,329 @@
+GTM RAW DATA - UNPARSED CONTAINER STRUCTURES
+Container ID: GTM-N26LKHCP
+"Generated: 12/10/2025, 3:48:54 PM"
+
+This shows the actual JavaScript object structure from the published GTM container.
+This is the raw data BEFORE parsing - what GTM returns when you fetch the container.
+
+#ERROR!
+Showing 5 of 645 total tags
+
+RAW TAG #0
+Full JSON Structure:
+{
+"  ""function"": ""__gclidw"","
+"  ""priority"": 1005,"
+"  ""metadata"": ["
+"    ""map"""
+"  ],"
+"  ""consent"": ["
+"    ""list"","
+"    ""ad_storage"""
+"  ],"
+"  ""once_per_event"": true,"
+"  ""vtp_enableCrossDomain"": true,"
+"  ""vtp_enableUrlPassthrough"": true,"
+"  ""vtp_acceptIncoming"": true,"
+"  ""vtp_enableCookieOverrides"": false,"
+"  ""vtp_formDecoration"": false,"
+"  ""vtp_urlPosition"": ""query"","
+"  ""tag_id"": 313"
+}
+
+RAW TAG #1
+Full JSON Structure:
+{
+"  ""function"": ""__googtag"","
+"  ""priority"": 1000,"
+"  ""metadata"": ["
+"    ""map"""
+"  ],"
+"  ""consent"": ["
+"    ""list"","
+"    ""ad_storage"""
+"  ],"
+"  ""vtp_tagId"": ""DC-9124178"","
+"  ""vtp_configSettingsVariable"": ["
+"    ""macro"","
+85
+"  ],"
+"  ""vtp_configSettingsTable"": ["
+"    ""list"","
+    [
+"      ""map"","
+"      ""parameter"","
+"      ""send_page_view"","
+"      ""parameterValue"","
+"      ""false"""
+    ]
+"  ],"
+"  ""tag_id"": 1702"
+}
+
+RAW TAG #2
+Full JSON Structure:
+{
+"  ""function"": ""__googtag"","
+"  ""priority"": 1000,"
+"  ""metadata"": ["
+"    ""map"""
+"  ],"
+"  ""consent"": ["
+"    ""list"","
+"    ""ad_storage"""
+"  ],"
+"  ""vtp_tagId"": ""DC-11500802"","
+"  ""vtp_configSettingsTable"": ["
+"    ""list"","
+    [
+"      ""map"","
+"      ""parameter"","
+"      ""send_page_view"","
+"      ""parameterValue"","
+"      ""false"""
+    ]
+"  ],"
+"  ""tag_id"": 1703"
+}
+
+RAW TAG #3
+Full JSON Structure:
+{
+"  ""function"": ""__googtag"","
+"  ""priority"": 1000,"
+"  ""metadata"": ["
+"    ""map"""
+"  ],"
+"  ""consent"": ["
+"    ""list"","
+"    ""ad_storage"""
+"  ],"
+"  ""vtp_tagId"": ""DC-6258894"","
+"  ""vtp_configSettingsTable"": ["
+"    ""list"","
+    [
+"      ""map"","
+"      ""parameter"","
+"      ""send_page_view"","
+"      ""parameterValue"","
+"      ""false"""
+    ]
+"  ],"
+"  ""tag_id"": 1704"
+}
+
+RAW TAG #4
+Full JSON Structure:
+{
+"  ""function"": ""__googtag"","
+"  ""priority"": 1000,"
+"  ""metadata"": ["
+"    ""map"""
+"  ],"
+"  ""consent"": ["
+"    ""list"","
+"    ""ad_storage"""
+"  ],"
+"  ""vtp_tagId"": ""DC-15158822"","
+"  ""vtp_configSettingsTable"": ["
+"    ""list"","
+    [
+"      ""map"","
+"      ""parameter"","
+"      ""send_page_view"","
+"      ""parameterValue"","
+"      ""false"""
+    ]
+"  ],"
+"  ""tag_id"": 1705"
+}
+
+
+#ERROR!
+Showing 5 of 305 total predicates
+
+RAW PREDICATE #0
+Full JSON Structure:
+{
+"  ""function"": ""_eq"","
+"  ""arg0"": ["
+"    ""macro"","
+0
+"  ],"
+"  ""arg1"": ""gtm.triggerGroup"""
+}
+
+RAW PREDICATE #1
+Full JSON Structure:
+{
+"  ""function"": ""_re"","
+"  ""arg0"": ["
+"    ""macro"","
+1
+"  ],"
+"  ""arg1"": ""(^$|((^|,)188697223_1592($|,)))"""
+}
+
+RAW PREDICATE #2
+Full JSON Structure:
+{
+"  ""function"": ""_re"","
+"  ""arg0"": ["
+"    ""macro"","
+2
+"  ],"
+"  ""arg1"": ""discoverycove.com$|^unitedparks.com$"","
+"  ""ignore_case"": true"
+}
+
+RAW PREDICATE #3
+Full JSON Structure:
+{
+"  ""function"": ""_re"","
+"  ""arg0"": ["
+"    ""macro"","
+0
+"  ],"
+"  ""arg1"": "".*"""
+}
+
+RAW PREDICATE #4
+Full JSON Structure:
+{
+"  ""function"": ""_re"","
+"  ""arg0"": ["
+"    ""macro"","
+1
+"  ],"
+"  ""arg1"": ""(^$|((^|,)188697223_1486($|,)))"""
+}
+
+
+#ERROR!
+Showing 5 of 285 total rules
+"Explanation: Rules define WHEN tags fire. Format: [[""if"",predicateIds],[""add"",tagIds],[""unless"",exceptionIds]]"
+
+RAW RULE #0
+Full JSON Structure:
+[
+  [
+"    ""if"","
+"    0,"
+1
+"  ],"
+  [
+"    ""add"","
+"    14,"
+60
+  ]
+]
+
+RAW RULE #1
+Full JSON Structure:
+[
+  [
+"    ""if"","
+"    0,"
+4
+"  ],"
+  [
+"    ""add"","
+15
+  ]
+]
+
+RAW RULE #2
+Full JSON Structure:
+[
+  [
+"    ""if"","
+"    0,"
+5
+"  ],"
+  [
+"    ""add"","
+16
+  ]
+]
+
+RAW RULE #3
+Full JSON Structure:
+[
+  [
+"    ""if"","
+"    7,"
+8
+"  ],"
+  [
+"    ""unless"","
+6
+"  ],"
+  [
+"    ""add"","
+17
+  ]
+]
+
+RAW RULE #4
+Full JSON Structure:
+[
+  [
+"    ""if"","
+"    0,"
+9
+"  ],"
+  [
+"    ""add"","
+18
+  ]
+]
+
+
+#ERROR!
+Showing 5 of 200 total macros
+
+RAW MACRO #0
+Full JSON Structure:
+{
+"  ""function"": ""__e"""
+}
+
+RAW MACRO #1
+Full JSON Structure:
+{
+"  ""function"": ""__v"","
+"  ""vtp_name"": ""gtm.triggers"","
+"  ""vtp_dataLayerVersion"": 2,"
+"  ""vtp_setDefaultValue"": true,"
+"  ""vtp_defaultValue"": """""
+}
+
+RAW MACRO #2
+Full JSON Structure:
+{
+"  ""function"": ""__u"","
+"  ""vtp_component"": ""HOST"","
+"  ""vtp_enableMultiQueryKeys"": false,"
+"  ""vtp_enableIgnoreEmptyQueryParam"": false"
+}
+
+RAW MACRO #3
+Full JSON Structure:
+{
+"  ""function"": ""__r"""
+}
+
+RAW MACRO #4
+Full JSON Structure:
+{
+"  ""function"": ""__u"","
+"  ""vtp_enableMultiQueryKeys"": false,"
+"  ""vtp_enableIgnoreEmptyQueryParam"": false"
+}
+
+
+#ERROR!
+Total entities: 0
+Note: Entities provide name/metadata mappings. Often empty in published containers.
+
+No entities found (common in published containers)
