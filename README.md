@@ -85,6 +85,174 @@ Both tools produce **stakeholder-ready documentation** in Google Sheets format, 
 
 ---
 
+## 🔐 GTM Access Comparison: What Data Can Be Collected?
+
+The GTM Container Inspector works **without requiring GTM account access** by parsing the published container JavaScript. However, this approach has limitations compared to having full GTM workspace access.
+
+### 📊 Tags - Data Availability Comparison
+
+| **Field** | **No Access (Published Container)** | **Full Access (GTM Workspace/Export)** |
+|-----------|-------------------------------------|----------------------------------------|
+| **Container ID** | ✅ Available | ✅ Available |
+| **Tag ID** | ✅ Function name (e.g., `__gclidw`, `__html`) | ✅ Actual GTM Tag ID (e.g., `14`, `22`, `30`) |
+| **Tag Name** | ⚠️ Auto-generated from metadata/parameters | ✅ Human-readable workspace name |
+| **Tag Type** | ✅ Function type (e.g., `__googtag`, `__html`) | ✅ Full type with template info |
+| **Vendor** | ✅ Detected from function + HTML analysis | ✅ Vendor name |
+| **Priority** | ✅ Load priority (1005, 1000, 100, 0) | ✅ Same |
+| **Firing Triggers** | ✅ Trigger IDs that fire this tag | ✅ Trigger names + IDs |
+| **Blocking Triggers** | ❌ Not in published container | ✅ Trigger names + IDs that block firing |
+| **Consent Settings** | ✅ Consent types (ad_storage, analytics_storage) | ✅ Same with status (NEEDED, NOT_NEEDED) |
+| **Firing Option** | ✅ Once per event / Once per page / Unlimited | ✅ Same (ONCE_PER_EVENT, etc.) |
+| **Setup Tags** | ✅ Tag IDs that must fire first | ✅ Tag names + IDs |
+| **Folder** | ❌ Not in published container | ✅ Folder name (e.g., "GA4", "Extole") |
+| **Notes** | ❌ Workspace metadata only | ✅ Tag documentation notes |
+| **Paused Status** | ❌ Not published | ✅ Active/Paused status |
+| **Parameters** | ✅ All vtp_* parameters (raw format) | ✅ Flattened with human labels |
+| **Raw JSON** | ✅ Complete tag object | ✅ Full workspace JSON |
+
+**Coverage: ~73% without access | 100% with access**
+
+---
+
+### 🎯 Triggers - Data Availability Comparison
+
+| **Field** | **No Access (Published Container)** | **Full Access (GTM Workspace/Export)** |
+|-----------|-------------------------------------|----------------------------------------|
+| **Container ID** | ✅ Available | ✅ Available |
+| **Trigger ID** | ⚠️ Runtime index (trigger_0, trigger_1) | ✅ Actual GTM Trigger ID (11, 17, 19) |
+| **Trigger Name** | ❌ Auto-generated generic names | ✅ Human-readable workspace name |
+| **Trigger Type** | ⚠️ Basic type (Custom Trigger, Page View) | ✅ Detailed type (CUSTOM_EVENT, PAGE_VIEW, CLICK, FORM_SUBMISSION) |
+| **Event Name** | ✅ Custom event names (page_view_delayed, add_to_cart) | ✅ Same |
+| **Conditions** | ⚠️ Predicate references (numeric IDs) | ✅ Flattened readable conditions ({{Variable}} EQUALS value) |
+| **Exception Conditions** | ✅ Unless predicates (numeric references) | ✅ Human-readable blocking conditions |
+| **Folder** | ❌ Not in published container | ✅ Folder name |
+| **Used By Tags** | ❌ Requires reverse lookup | ✅ List of tag names that use this trigger |
+| **Trigger Groups** | ⚠️ Detectable from structure | ✅ Explicit group type and members |
+| **Filter** | ⚠️ Predicate logic (numeric) | ✅ Readable filter expressions |
+| **Raw Data** | ✅ Runtime rules array | ✅ Full workspace JSON |
+
+**Coverage: ~65% without access | 100% with access**
+
+---
+
+### 🔧 Variables - Data Availability Comparison
+
+| **Field** | **No Access (Published Container)** | **Full Access (GTM Workspace/Export)** |
+|-----------|-------------------------------------|----------------------------------------|
+| **Container ID** | ✅ Available | ✅ Available |
+| **Variable ID** | ⚠️ Macro function (e.g., `__v`, `__u`) | ✅ Actual GTM Variable ID (7, 8, 9) |
+| **Variable Name** | ⚠️ Auto-generated from parameters | ✅ Human-readable workspace name |
+| **Variable Type** | ✅ Function type (__v, __u, __jsm, etc.) | ✅ Full type (Data Layer Variable, URL, Custom JavaScript) |
+| **Default Value** | ✅ vtp_defaultValue when set | ✅ Same |
+| **Data Layer Path** | ✅ vtp_name for DL variables | ✅ Same |
+| **Format/Component** | ✅ vtp_component for URL variables | ✅ Same |
+| **JavaScript Code** | ✅ Full code for Custom JS variables | ✅ Same |
+| **Folder** | ❌ Not in published container | ✅ Folder name |
+| **Used By Tags** | ❌ Requires reverse lookup | ✅ List of tag names |
+| **Used By Triggers** | ❌ Requires reverse lookup | ✅ List of trigger names |
+| **Parameters** | ✅ All vtp_* parameters (raw) | ✅ Flattened with human labels |
+| **Raw Data** | ✅ Complete macro object | ✅ Full workspace JSON |
+
+**Coverage: ~67% without access | 100% with access**
+
+---
+
+### 📦 Additional Information - Availability
+
+| **Data Type** | **No Access (Published Container)** | **Full Access (GTM Workspace/Export)** |
+|---------------|-------------------------------------|----------------------------------------|
+| **Built-In Variables** | ❌ Not published | ✅ List of enabled built-in variables (PAGE_URL, EVENT, etc.) |
+| **Folders** | ❌ Not published | ✅ Complete folder hierarchy with contents |
+| **Templates** | ⚠️ Function references only | ✅ Custom template definitions and metadata |
+| **Vendor IDs** | ✅ Extracted from parameters (GA4, Ads, Floodlight) | ✅ Same |
+| **Container Version** | ⚠️ Compiled version (runtime) | ✅ Version number, timestamp, notes |
+| **Account Info** | ❌ Not published | ✅ Account ID, container name, workspace info |
+| **Usage Tracking** | ⚠️ Can calculate via cross-reference | ✅ Built-in usage reports |
+| **Dependency Graph** | ⚠️ Can build from raw data | ✅ Visual workspace dependencies |
+
+**Coverage: ~40% without access | 100% with access**
+
+---
+
+### 🎯 Summary: Key Limitations Without GTM Access
+
+#### ❌ **Cannot Extract:**
+- Human-readable names (tags auto-named from parameters)
+- Folder organization and hierarchy
+- Blocking triggers (exception logic on tags)
+- Built-in variables list
+- Paused/active status
+- Tag/trigger/variable notes and documentation
+- Actual GTM entity IDs (only runtime references)
+- Readable condition strings (predicates are numeric)
+
+#### ⚠️ **Limited Extraction:**
+- Trigger names (generic "Trigger #0" instead of "GA4 - purchase")
+- Trigger types (basic detection vs. full taxonomy)
+- Variable names (derived from parameters vs. workspace names)
+- Usage tracking (requires manual cross-referencing)
+
+#### ✅ **Full Extraction:**
+- Tag priority and load order
+- Consent requirements (ad_storage, analytics_storage)
+- Tag firing options (once per event, unlimited)
+- Setup tag dependencies (sequencing)
+- Custom event names
+- Exception conditions (unless predicates)
+- Variable default values
+- Data layer paths
+- All technical parameters (vtp_* fields)
+- Vendor detection (GA4, Ads, Meta, TikTok, etc.)
+- JavaScript code (Custom HTML, Custom JS variables)
+
+### 📊 **Overall Coverage:**
+- **Tags**: ~73% metadata extracted
+- **Triggers**: ~65% metadata extracted  
+- **Variables**: ~67% metadata extracted
+- **Container-level**: ~40% metadata extracted
+
+**Average: ~61% of GTM data available without account access**
+
+---
+
+### 💡 **Use Cases by Access Level**
+
+#### **Without GTM Access (Published Container Only):**
+✅ Vendor audit (which tracking pixels are present?)  
+✅ Tag load order analysis (priority debugging)  
+✅ Consent Mode compliance check  
+✅ Custom event tracking inventory  
+✅ Data layer dependency mapping  
+✅ Tag sequencing analysis  
+✅ Technical parameter extraction  
+✅ Quick container health check  
+
+❌ Full workspace documentation  
+❌ Organizational structure analysis  
+❌ Tag naming and categorization  
+❌ Complete dependency mapping  
+❌ Unused entity detection (requires names)  
+
+#### **With Full GTM Access:**
+✅ Complete container documentation  
+✅ Workspace organization analysis  
+✅ Unused tag/trigger/variable detection  
+✅ Human-readable audit reports  
+✅ Folder structure optimization  
+✅ Complete dependency graphs  
+✅ Tag naming standardization review  
+✅ Historical version comparison  
+
+---
+
+### 🚀 **Recommendation:**
+
+**For client audits without GTM access**: The Inspector provides valuable technical insights covering ~60-70% of container metadata—sufficient for vendor detection, consent analysis, and technical debugging.
+
+**For internal/client work with GTM access**: Export the container JSON from GTM workspace and use our comparison analysis to get 100% coverage with human-readable names, folder structure, and complete documentation.
+
+---
+
 ## ⚡ Quick Start
 
 ### Prerequisites
